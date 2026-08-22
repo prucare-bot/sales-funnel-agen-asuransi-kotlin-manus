@@ -18,6 +18,7 @@ import id.jagakeluarga.salesfunnel.ui.screens.agenda.AgendaScreen
 import id.jagakeluarga.salesfunnel.ui.screens.nasabah.NasabahScreen
 import id.jagakeluarga.salesfunnel.ui.screens.pipeline.PipelineScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekScreen
+import id.jagakeluarga.salesfunnel.ui.screens.settings.SettingsScreen
 import id.jagakeluarga.salesfunnel.ui.theme.SalesFunnelTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,6 +63,9 @@ class MainActivity : ComponentActivity() {
                             nasabahList = nasabahList,
                             onSimpan = viewModel::saveNasabah,
                             onHapus = viewModel::deleteNasabah,
+                        )
+                        Destination.SETTINGS -> SettingsScreen(
+                            dbFilePath = getDatabasePath("sales_funnel.db").absolutePath,
                         )
                     }
                 }

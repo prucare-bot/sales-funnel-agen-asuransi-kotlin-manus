@@ -19,9 +19,9 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            // Standard Android debug keystore. Fine for sideloading/testing;
-            // generate a real release keystore before publishing to Play Store.
-            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+            // Stable keystore committed to the repo so the SHA-1 fingerprint
+            // never changes between builds (required for Google Sign-In).
+            storeFile = file("../keystore/debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
@@ -75,6 +75,15 @@ dependencies {
 
     // DataStore (simple settings/preferences)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Google Sign-In + Drive REST API (backup/restore)
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.api-client:google-api-client-android:2.9.0") {
+        exclude(group = "org.apache.httpcomponents")
+    }
+    implementation("com.google.apis:google-api-services-drive:v3-rev20251210-2.0.0") {
+        exclude(group = "org.apache.httpcomponents")
+    }
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
