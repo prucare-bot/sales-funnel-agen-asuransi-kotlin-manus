@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,6 +23,15 @@ fun ProspekScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Prospek?>(null) }
+    var kataKunci by remember { mutableStateOf("") }
+
+    val hasilFilter = remember(prospekList, kataKunci) {
+        if (kataKunci.isBlank()) {
+            prospekList
+        } else {
+            prospekList.filter { it.nama.contains(kataKunci, ignoreCase = true) }
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Daftar Prospek") }) },
@@ -28,23 +39,50 @@ fun ProspekScreen(
             FloatingActionButton(onClick = { editing = null; showDialog = true }) { Text("+") }
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(prospekList, key = { it.id }) { prospek ->
-                ListItem(
-                    headlineContent = { Text(prospek.nama) },
-                    supportingContent = { Text("${prospek.tahap.label} · ${prospek.nomorTelepon ?: "-"}") },
-                    trailingContent = {
-                        IconButton(onClick = { onHapus(prospek) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            OutlinedTextField(
+                value = kataKunci,
+                onValueChange = { kataKunci = it },
+                placeholder = { Text("Cari nama prospek...") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (kataKunci.isNotEmpty()) {
+                        IconButton(onClick = { kataKunci = "" }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Hapus pencarian")
                         }
-                    },
-                    modifier = Modifier.clickable { editing = prospek; showDialog = true },
-                )
-                HorizontalDivider()
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+
+            if (hasilFilter.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text(
+                        if (kataKunci.isBlank()) "Belum ada prospek" else "Tidak ditemukan \"$kataKunci\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(hasilFilter, key = { it.id }) { prospek ->
+                        ListItem(
+                            headlineContent = { Text(prospek.nama) },
+                            supportingContent = { Text("${prospek.tahap.label} · ${prospek.nomorTelepon ?: "-"}") },
+                            trailingContent = {
+                                IconButton(onClick = { onHapus(prospek) }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+                                }
+                            },
+                            modifier = Modifier.clickable { editing = prospek; showDialog = true },
+                        )
+                        HorizontalDivider()
+                    }
+                }
             }
         }
     }
