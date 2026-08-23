@@ -50,7 +50,7 @@ class GoogleDriveBackupManager(private val context: Context) {
         val credential = GoogleAccountCredential.usingOAuth2(
             context, listOf(DriveScopes.DRIVE_APPDATA)
         )
-        credential.selectedAccount = Account(account.email, "com.google")
+        credential.selectedAccount = Account(account.email ?: error("Akun Google tidak punya email"), "com.google")
         return Drive.Builder(
             NetHttpTransport(),
             GsonFactory.getDefaultInstance(),
