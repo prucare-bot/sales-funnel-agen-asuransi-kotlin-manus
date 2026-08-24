@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -58,6 +61,7 @@ fun AdaptiveScaffold(
     content: @Composable (Destination) -> Unit,
 ) {
     val useRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+    val tabDestinations = Destination.entries.filter { it != Destination.SETTINGS }
 
     if (useRail) {
         Row(Modifier.fillMaxSize()) {
@@ -67,12 +71,20 @@ fun AdaptiveScaffold(
                     .padding(vertical = 12.dp),
             ) {
                 NavigationRail(containerColor = Color.Transparent) {
-                    Destination.entries.forEach { dest ->
+                    tabDestinations.forEach { dest ->
                         NavigationRailItem(
                             selected = dest == current,
                             onClick = { onNavigate(dest) },
                             icon = { Icon(dest.icon, contentDescription = dest.label) },
-                            label = { Text(dest.label) },
+                            label = {
+                                Text(
+                                    dest.label,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                )
+                            },
                             colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.onPrimary,
                                 selectedTextColor = MaterialTheme.colorScheme.onPrimary,
@@ -94,7 +106,7 @@ fun AdaptiveScaffold(
     } else {
         Scaffold(
             topBar = { GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch) },
-            bottomBar = { CozyBottomBar(current, onNavigate) },
+            bottomBar = { CozyBottomBar(current, onNavigate, tabDestinations) },
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 AnimatedMenuContent(current, "menu_transition_bottom", content)
@@ -128,7 +140,11 @@ private fun AnimatedMenuContent(
 }
 
 @Composable
-private fun CozyBottomBar(current: Destination, onNavigate: (Destination) -> Unit) {
+private fun CozyBottomBar(
+    current: Destination,
+    onNavigate: (Destination) -> Unit,
+    tabDestinations: List<Destination>,
+) {
     val colors = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
@@ -141,12 +157,20 @@ private fun CozyBottomBar(current: Destination, onNavigate: (Destination) -> Uni
             containerColor = Color.Transparent,
             tonalElevation = 0.dp,
         ) {
-            Destination.entries.forEach { dest ->
+            tabDestinations.forEach { dest ->
                 NavigationBarItem(
                     selected = dest == current,
                     onClick = { onNavigate(dest) },
                     icon = { Icon(dest.icon, contentDescription = dest.label) },
-                    label = { Text(dest.label) },
+                    label = {
+                        Text(
+                            dest.label,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        )
+                    },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colors.onPrimary,
                         selectedTextColor = colors.onPrimary,
@@ -178,10 +202,19 @@ private fun GlobalHeader(
         },
         title = {
             Column {
-                Text(dateText, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    dateText,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                )
                 Text(
                     if (headerSubtitle.isBlank()) current.label else "${current.label} · $headerSubtitle",
-                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                 )
             }
         },
@@ -191,6 +224,9 @@ private fun GlobalHeader(
             }
             IconButton(onClick = { onNavigate(Destination.BERANDA) }) {
                 Icon(Icons.Filled.Home, contentDescription = "Beranda")
+            }
+            IconButton(onClick = { onNavigate(Destination.SETTINGS) }) {
+                Icon(Icons.Filled.Settings, contentDescription = "Pengaturan")
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
