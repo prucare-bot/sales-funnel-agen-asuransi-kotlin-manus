@@ -148,12 +148,14 @@ private fun CozyBottomBar(
     val colors = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary)))
-            .padding(horizontal = 4.dp, vertical = 5.dp),
+            .padding(horizontal = 0.dp, vertical = 5.dp),
     ) {
         NavigationBar(
+            modifier = Modifier.fillMaxWidth(),
             containerColor = Color.Transparent,
             tonalElevation = 0.dp,
         ) {
@@ -167,7 +169,7 @@ private fun CozyBottomBar(
                             dest.label,
                             maxLines = 1,
                             softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                         )
                     },
