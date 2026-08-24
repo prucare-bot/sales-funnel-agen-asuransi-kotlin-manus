@@ -15,6 +15,7 @@ import id.jagakeluarga.salesfunnel.ui.AppViewModel
 import id.jagakeluarga.salesfunnel.ui.navigation.AdaptiveScaffold
 import id.jagakeluarga.salesfunnel.ui.navigation.Destination
 import id.jagakeluarga.salesfunnel.ui.screens.agenda.AgendaScreen
+import id.jagakeluarga.salesfunnel.ui.screens.beranda.BerandaScreen
 import id.jagakeluarga.salesfunnel.ui.screens.nasabah.NasabahScreen
 import id.jagakeluarga.salesfunnel.ui.screens.pipeline.PipelineScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekScreen
@@ -29,7 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
-            var current by remember { mutableStateOf(Destination.PIPELINE) }
+            var current by remember { mutableStateOf(Destination.BERANDA) }
 
             val prospekList by viewModel.prospekList.collectAsState()
             val agendaList by viewModel.agendaList.collectAsState()
@@ -42,6 +43,10 @@ class MainActivity : ComponentActivity() {
                     onNavigate = { current = it },
                 ) {
                     when (current) {
+                        Destination.BERANDA -> BerandaScreen(
+                            prospekList = prospekList,
+                            agendaList = agendaList,
+                        )
                         Destination.PIPELINE -> PipelineScreen(
                             windowSizeClass = windowSizeClass,
                             prospekList = prospekList,

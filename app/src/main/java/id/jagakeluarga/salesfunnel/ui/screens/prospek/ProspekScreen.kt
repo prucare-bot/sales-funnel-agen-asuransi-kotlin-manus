@@ -1,5 +1,9 @@
 package id.jagakeluarga.salesfunnel.ui.screens.prospek
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,10 +11,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
@@ -70,15 +78,10 @@ fun ProspekScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(hasilFilter, key = { it.id }) { prospek ->
-                        ListItem(
-                            headlineContent = { Text(prospek.nama) },
-                            supportingContent = { Text("${prospek.tahap.label} · ${prospek.nomorTelepon ?: "-"}") },
-                            trailingContent = {
-                                IconButton(onClick = { onHapus(prospek) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Hapus")
-                                }
-                            },
-                            modifier = Modifier.clickable { editing = prospek; showDialog = true },
+                        SwipeableProspekItem(
+                            prospek = prospek,
+                            onKlik = { editing = prospek; showDialog = true },
+                            onHapus = { onHapus(prospek) },
                         )
                         HorizontalDivider()
                     }
@@ -92,6 +95,73 @@ fun ProspekScreen(
             initial = editing,
             onDismiss = { showDialog = false },
             onSimpan = { onSimpan(it); showDialog = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableProspekItem(
+    prospek: Prospek,
+    onKlik: () -> Unit,
+    onHapus: () -> Unit,
+) {
+    val context = LocalContext.current
+    var konfirmasiHapus by remember { mutableStateOf(false) }
+
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    konfirmasiHapus = true
+                    false // jangan langsung hilang, tunggu konfirmasi dialog
+                }
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    if (!prospek.nomorTelepon.isNullOrBlank()) {
+                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${prospek.nomorTelepon}"))
+                        context.startActivity(intent)
+                    }
+                    false // kembali ke posisi semula setelah buka dialer
+                }
+                SwipeToDismissBoxValue.Settled -> true
+            }
+        },
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val (warna, ikon, alignment) = when (dismissState.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> Triple(Color(0xFF10B981), Icons.Filled.Phone, Alignment.CenterStart)
+                SwipeToDismissBoxValue.EndToStart -> Triple(Color(0xFFEF4444), Icons.Filled.Delete, Alignment.CenterEnd)
+                SwipeToDismissBoxValue.Settled -> Triple(Color.Transparent, Icons.Filled.Phone, Alignment.CenterStart)
+            }
+            Box(
+                Modifier.fillMaxSize().background(warna).padding(horizontal = 20.dp),
+                contentAlignment = alignment,
+            ) {
+                Icon(ikon, contentDescription = null, tint = Color.White)
+            }
+        },
+    ) {
+        ListItem(
+            headlineContent = { Text(prospek.nama) },
+            supportingContent = { Text("${prospek.tahap.label} · ${prospek.nomorTelepon ?: "-"}") },
+            modifier = Modifier.clickable(onClick = onKlik),
+        )
+    }
+
+    if (konfirmasiHapus) {
+        AlertDialog(
+            onDismissRequest = { konfirmasiHapus = false },
+            title = { Text("Hapus prospek?") },
+            text = { Text("\"${prospek.nama}\" akan dihapus permanen.") },
+            confirmButton = {
+                TextButton(onClick = { onHapus(); konfirmasiHapus = false }) { Text("Hapus") }
+            },
+            dismissButton = {
+                TextButton(onClick = { konfirmasiHapus = false }) { Text("Batal") }
+            },
         )
     }
 }
