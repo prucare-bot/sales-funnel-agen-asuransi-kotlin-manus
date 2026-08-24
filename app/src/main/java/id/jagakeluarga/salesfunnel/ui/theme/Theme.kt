@@ -5,37 +5,68 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val TealPrimary = Color(0xFF00695C)
-private val TealDark = Color(0xFF004D40)
-private val TealSoft = Color(0xFFD9EEEA)
-private val TealPale = Color(0xFFEAF6F3)
-private val TealAccent = Color(0xFF2A9D8F)
-private val WarmWhite = Color(0xFFFFFEFC)
-private val Ink = Color(0xFF173B36)
+enum class AppThemeColor(val label: String) {
+    HIJAU("Hijau"),
+    BIRU("Biru"),
+    MERAH("Merah"),
+}
 
-private val CozyColors = lightColorScheme(
-    primary = TealPrimary,
-    onPrimary = Color.White,
-    primaryContainer = TealSoft,
-    onPrimaryContainer = TealDark,
-    secondary = TealAccent,
-    onSecondary = Color.White,
-    secondaryContainer = TealPale,
-    onSecondaryContainer = TealDark,
-    tertiary = Color(0xFFB4874A),
-    onTertiary = Color.White,
-    background = TealPale,
-    onBackground = Ink,
-    surface = WarmWhite,
-    onSurface = Ink,
-    surfaceVariant = Color(0xFFE3F0EE),
-    onSurfaceVariant = Color(0xFF52706A),
-)
+private val GreenPrimary = Color(0xFF00695C)
+private val GreenSecondary = Color(0xFF2A9D8F)
+private val GreenContainer = Color(0xFFD9EEEA)
+private val GreenBackground = Color(0xFFEAF6F3)
+
+private val BluePrimary = Color(0xFF1565C0)
+private val BlueSecondary = Color(0xFF42A5F5)
+private val BlueContainer = Color(0xFFDCEBFA)
+private val BlueBackground = Color(0xFFF0F7FF)
+
+private val RedPrimary = Color(0xFFB3261E)
+private val RedSecondary = Color(0xFFE76F51)
+private val RedContainer = Color(0xFFFFE1DC)
+private val RedBackground = Color(0xFFFFF5F3)
+
+private val Ink = Color(0xFF243431)
+private val WarmWhite = Color(0xFFFFFEFC)
+
+private fun appColorScheme(theme: AppThemeColor) = when (theme) {
+    AppThemeColor.HIJAU -> lightColorScheme(
+        primary = GreenPrimary, onPrimary = Color.White,
+        primaryContainer = GreenContainer, onPrimaryContainer = Color(0xFF004D40),
+        secondary = GreenSecondary, onSecondary = Color.White,
+        secondaryContainer = GreenBackground, onSecondaryContainer = Color(0xFF004D40),
+        tertiary = Color(0xFFB4874A), onTertiary = Color.White,
+        background = GreenBackground, onBackground = Ink,
+        surface = WarmWhite, onSurface = Ink,
+        surfaceVariant = Color(0xFFE3F0EE), onSurfaceVariant = Color(0xFF52706A),
+    )
+    AppThemeColor.BIRU -> lightColorScheme(
+        primary = BluePrimary, onPrimary = Color.White,
+        primaryContainer = BlueContainer, onPrimaryContainer = Color(0xFF0D47A1),
+        secondary = BlueSecondary, onSecondary = Color.White,
+        secondaryContainer = BlueBackground, onSecondaryContainer = Color(0xFF0D47A1),
+        tertiary = Color(0xFF607D8B), onTertiary = Color.White,
+        background = BlueBackground, onBackground = Color(0xFF26384A),
+        surface = WarmWhite, onSurface = Color(0xFF26384A),
+        surfaceVariant = Color(0xFFE6F0FA), onSurfaceVariant = Color(0xFF526B83),
+    )
+    AppThemeColor.MERAH -> lightColorScheme(
+        primary = RedPrimary, onPrimary = Color.White,
+        primaryContainer = RedContainer, onPrimaryContainer = Color(0xFF8C1D18),
+        secondary = RedSecondary, onSecondary = Color.White,
+        secondaryContainer = RedBackground, onSecondaryContainer = Color(0xFF8C1D18),
+        tertiary = Color(0xFFC28E3D), onTertiary = Color.White,
+        background = RedBackground, onBackground = Color(0xFF4A2925),
+        surface = WarmWhite, onSurface = Color(0xFF4A2925),
+        surfaceVariant = Color(0xFFF8E9E5), onSurfaceVariant = Color(0xFF765954),
+    )
+}
 
 @Composable
 fun SalesFunnelTheme(
+    theme: AppThemeColor = AppThemeColor.HIJAU,
     darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(colorScheme = CozyColors, content = content)
+    MaterialTheme(colorScheme = appColorScheme(theme), content = content)
 }

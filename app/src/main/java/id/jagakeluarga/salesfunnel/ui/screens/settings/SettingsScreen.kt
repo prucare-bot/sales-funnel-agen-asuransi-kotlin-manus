@@ -19,12 +19,18 @@ import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
+import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {}) {
+fun SettingsScreen(
+    dbFilePath: String,
+    onNamaUserChanged: (String) -> Unit = {},
+    selectedTheme: AppThemeColor = AppThemeColor.HIJAU,
+    onThemeChanged: (AppThemeColor) -> Unit = {},
+) {
     val context = LocalContext.current
     val manager = remember { GoogleDriveBackupManager(context) }
     val scope = rememberCoroutineScope()
@@ -109,6 +115,19 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
                         headlineContent = { Text("Change user name") },
                         supportingContent = { Text("Nama yang tampil di dashboard") },
                         modifier = Modifier.clickable { status = "Silakan ubah nama pada kolom Profil User." },
+                    )
+                }
+            }
+
+            Text("Warna Tema", style = MaterialTheme.typography.titleMedium)
+            Text("Pilih warna utama aplikasi", style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                AppThemeColor.entries.forEach { option ->
+                    FilterChip(
+                        selected = selectedTheme == option,
+                        onClick = { onThemeChanged(option) },
+                        label = { Text(option.label) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }

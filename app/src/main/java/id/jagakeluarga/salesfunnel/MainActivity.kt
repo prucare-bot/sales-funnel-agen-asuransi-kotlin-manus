@@ -26,6 +26,7 @@ import id.jagakeluarga.salesfunnel.ui.screens.pipeline.PipelineScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.DetailProspekScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekScreen
 import id.jagakeluarga.salesfunnel.ui.screens.settings.SettingsScreen
+import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import id.jagakeluarga.salesfunnel.ui.theme.SalesFunnelTheme
 
 class MainActivity : ComponentActivity() {
@@ -38,8 +39,15 @@ class MainActivity : ComponentActivity() {
             val windowSizeClass = calculateWindowSizeClass(this)
             var current by remember { mutableStateOf(Destination.BERANDA) }
             var selectedProspekId by remember { mutableStateOf<String?>(null) }
+            val settings = remember { getSharedPreferences("sales_funnel_settings", MODE_PRIVATE) }
             var namaAgen by remember {
-                mutableStateOf(getSharedPreferences("sales_funnel_settings", MODE_PRIVATE).getString("nama_user", "Densus") ?: "Densus")
+                mutableStateOf(settings.getString("nama_user", "Densus") ?: "Densus")
+            }
+            var tema by remember {
+                mutableStateOf(
+                    runCatching { AppThemeColor.valueOf(settings.getString("theme_color", AppThemeColor.HIJAU.name) ?: AppThemeColor.HIJAU.name) }
+                        .getOrDefault(AppThemeColor.HIJAU)
+                )
             }
 
             val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -58,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
             val prospekTerpilih = selectedProspekId?.let { id -> prospekList.find { it.id == id } }
 
-            SalesFunnelTheme {
+            SalesFunnelTheme(theme = tema) {
                 if (prospekTerpilih != null) {
                     DetailProspekScreen(
                         prospek = prospekTerpilih,
@@ -109,6 +117,11 @@ class MainActivity : ComponentActivity() {
                             Destination.SETTINGS -> SettingsScreen(
                                 dbFilePath = getDatabasePath("sales_funnel.db").absolutePath,
                                 onNamaUserChanged = { namaAgen = it },
+                                selectedTheme = tema,
+                                onThemeChanged = {
+                                    tema = it
+                                    settings.edit().putString("theme_color", it.name).apply()
+                                },
                             )
                         }
                     }
