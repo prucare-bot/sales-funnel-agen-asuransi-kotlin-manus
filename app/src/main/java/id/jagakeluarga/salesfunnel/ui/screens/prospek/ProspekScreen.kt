@@ -32,6 +32,7 @@ import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekFilterDialog
 import id.jagakeluarga.salesfunnel.ui.common.ContactPickerDialog
+import id.jagakeluarga.salesfunnel.ui.common.WhatsAppTemplateDialog
 import androidx.core.content.ContextCompat
 import id.jagakeluarga.salesfunnel.whatsapp.WhatsAppHelper
 
@@ -193,6 +194,7 @@ private fun SwipeableProspekItem(
 ) {
     val context = LocalContext.current
     var konfirmasiHapus by remember { mutableStateOf(false) }
+    var showTemplateDialog by remember { mutableStateOf(false) }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -235,16 +237,21 @@ private fun SwipeableProspekItem(
             trailingContent = {
                 IconButton(
                     enabled = !prospek.nomorTelepon.isNullOrBlank(),
-                    onClick = {
-                        WhatsAppHelper.openChat(
-                            context,
-                            prospek.nomorTelepon,
-                            "Halo ${prospek.nama}, saya ingin melanjutkan komunikasi terkait kebutuhan perlindungan Anda. Kapan waktu yang nyaman untuk berdiskusi?",
-                        )
-                    },
+                    onClick = { showTemplateDialog = true },
                 ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
             },
             modifier = Modifier.clickable(onClick = onKlik),
+        )
+    }
+
+    if (showTemplateDialog) {
+        WhatsAppTemplateDialog(
+            nama = prospek.nama,
+            onDismiss = { showTemplateDialog = false },
+            onSend = { message ->
+                WhatsAppHelper.openChat(context, prospek.nomorTelepon, message)
+                showTemplateDialog = false
+            },
         )
     }
 

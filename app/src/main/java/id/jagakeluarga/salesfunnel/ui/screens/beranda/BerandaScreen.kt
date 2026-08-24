@@ -34,6 +34,8 @@ fun BerandaScreen(
     agendaList: List<Agenda>,
     namaAgen: String = "Densus",
     onHomeClick: () -> Unit = {},
+    onBukaAgenda: () -> Unit = {},
+    onTandaiAgendaSelesai: (Agenda) -> Unit = {},
 ) {
     var periodeTerpilih by remember { mutableStateOf(InsightPeriod.LIFETIME) }
     var showQuickSearch by remember { mutableStateOf(false) }
@@ -61,6 +63,11 @@ fun BerandaScreen(
     val akhirHari = awalHari + 24 * 60 * 60 * 1000
     val agendaHariIni = agendaList.filter { it.waktuMulai in awalHari until akhirHari && !it.selesai }
         .sortedBy { it.waktuMulai }
+    val agendaTerlambat = agendaList.filter { !it.selesai && it.waktuMulai < sekarang }
+        .sortedBy { it.waktuMulai }
+    val agendaBerikutnya = agendaList.filter { !it.selesai && it.waktuMulai >= sekarang }
+        .sortedBy { it.waktuMulai }
+        .take(3)
 
     val grouped = TahapPipeline.entries.associateWith { tahap -> prospekInsight.count { it.tahap == tahap } }
     val maxJumlah = (grouped.values.maxOrNull() ?: 0).coerceAtLeast(1)
@@ -105,6 +112,13 @@ fun BerandaScreen(
                     }
                 }
             }
+
+            FollowUpPrioritySection(
+                agendaTerlambat = agendaTerlambat,
+                agendaBerikutnya = agendaBerikutnya,
+                onBukaAgenda = onBukaAgenda,
+                onTandaiAgendaSelesai = onTandaiAgendaSelesai,
+            )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RingkasanCard(Modifier.weight(1f), "$totalProspekAktif", "Prospek aktif")
@@ -181,6 +195,56 @@ fun BerandaScreen(
             },
             confirmButton = { TextButton(onClick = { showQuickSearch = false; quickSearchQuery = "" }) { Text("Tutup") } },
         )
+    }
+}
+
+@Composable
+private fun FollowUpPrioritySection(
+    agendaTerlambat: List<Agenda>,
+    agendaBerikutnya: List<Agenda>,
+    onBukaAgenda: () -> Unit,
+    onTandaiAgendaSelesai: (Agenda) -> Unit,
+) {
+    val fmt = remember { SimpleDateFormat("dd MMM, HH:mm", Locale("id", "ID")) }
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Follow-up Prioritas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onBukaAgenda) { Text("Lihat semua") }
+        }
+        when {
+            agendaTerlambat.isNotEmpty() -> {
+                agendaTerlambat.take(3).forEach { agenda ->
+                    ListItem(
+                        headlineContent = { Text(agenda.judul) },
+                        supportingContent = {
+                            Text("Terlambat · ${fmt.format(Date(agenda.waktuMulai))}", color = MaterialTheme.colorScheme.error)
+                        },
+                        trailingContent = {
+                            TextButton(onClick = { onTandaiAgendaSelesai(agenda) }) { Text("Selesai") }
+                        },
+                    )
+                    HorizontalDivider()
+                }
+            }
+            agendaBerikutnya.isNotEmpty() -> {
+                agendaBerikutnya.forEach { agenda ->
+                    ListItem(
+                        headlineContent = { Text(agenda.judul) },
+                        supportingContent = { Text("Berikutnya · ${fmt.format(Date(agenda.waktuMulai))}") },
+                    )
+                    HorizontalDivider()
+                }
+            }
+            else -> Text(
+                "Tidak ada follow-up yang perlu ditindaklanjuti.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

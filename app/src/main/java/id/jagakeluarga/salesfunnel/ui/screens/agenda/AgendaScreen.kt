@@ -10,15 +10,18 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
+import id.jagakeluarga.salesfunnel.ui.common.WhatsAppTemplateDialog
 import id.jagakeluarga.salesfunnel.whatsapp.WhatsAppHelper
 import java.text.SimpleDateFormat
 import java.util.*
@@ -29,11 +32,13 @@ fun AgendaScreen(
     prospekList: List<Prospek>,
     onSimpan: (Agenda) -> Unit,
     onHapus: (Agenda) -> Unit,
+    onToggleSelesai: (Agenda) -> Unit = {},
 ) {
     var dialogAgenda by remember { mutableStateOf<Agenda?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
+    var templateAgenda by remember { mutableStateOf<Agenda?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Agenda Follow-up") }) },
@@ -51,22 +56,34 @@ fun AgendaScreen(
         ) {
             items(agendaList, key = { it.id }) { agenda ->
                 val namaProspek = prospekList.find { it.id == agenda.prospekId }?.nama ?: "(prospek dihapus)"
+                val terlambat = !agenda.selesai && agenda.waktuMulai < System.currentTimeMillis()
                 ListItem(
+                    leadingContent = {
+                        Checkbox(
+                            checked = agenda.selesai,
+                            onCheckedChange = { onToggleSelesai(agenda) },
+                        )
+                    },
                     headlineContent = { Text(agenda.judul) },
-                    supportingContent = { Text("$namaProspek · ${agenda.jenis.label} · ${fmt.format(Date(agenda.waktuMulai))}") },
+                    supportingContent = {
+                        Column {
+                            Text("$namaProspek · ${agenda.jenis.label} · ${fmt.format(Date(agenda.waktuMulai))}")
+                            if (terlambat) {
+                                Text("Terlambat", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    },
                     trailingContent = {
                         Row {
                             IconButton(
                                 enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
+                                onClick = { templateAgenda = agenda },
+                            ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
+                            IconButton(
                                 onClick = {
-                                    val prospek = prospekList.find { it.id == agenda.prospekId }
-                                    WhatsAppHelper.openChat(
-                                        context = context,
-                                        phone = prospek?.nomorTelepon,
-                                        message = "Halo ${prospek?.nama.orEmpty()}, mengingatkan agenda ${agenda.judul} pada ${fmt.format(Date(agenda.waktuMulai))}. Sampai bertemu.",
-                                    )
+                                    onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false))
                                 },
-                            ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
+                            ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
                             IconButton(onClick = {
                                 dialogAgenda = agenda
                                 showDialog = true
@@ -81,6 +98,22 @@ fun AgendaScreen(
                 )
                 HorizontalDivider()
             }
+        }
+    }
+
+    templateAgenda?.let { agenda ->
+        val prospek = prospekList.find { it.id == agenda.prospekId }
+        if (prospek != null) {
+            WhatsAppTemplateDialog(
+                nama = prospek.nama,
+                agenda = agenda.judul,
+                waktu = fmt.format(Date(agenda.waktuMulai)),
+                onDismiss = { templateAgenda = null },
+                onSend = { message ->
+                    WhatsAppHelper.openChat(context, prospek.nomorTelepon, message)
+                    templateAgenda = null
+                },
+            )
         }
     }
 

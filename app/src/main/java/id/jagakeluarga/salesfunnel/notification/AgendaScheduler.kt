@@ -20,8 +20,10 @@ object AgendaScheduler {
             return
         }
         val data = workDataOf(
+            AgendaReminderWorker.KEY_AGENDA_ID to agenda.id,
             AgendaReminderWorker.KEY_JUDUL to agenda.judul,
             AgendaReminderWorker.KEY_JENIS to agenda.jenis.label,
+            AgendaReminderWorker.KEY_WAKTU_MULAI to agenda.waktuMulai,
             AgendaReminderWorker.KEY_OFFSET_HOURS to agenda.reminderOffsetHours,
         )
         val request = OneTimeWorkRequestBuilder<AgendaReminderWorker>()

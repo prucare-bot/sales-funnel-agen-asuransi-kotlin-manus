@@ -12,6 +12,9 @@ interface AgendaDao {
     @Query("SELECT * FROM agenda WHERE prospekId = :prospekId ORDER BY waktuMulai ASC")
     fun observeByProspek(prospekId: String): Flow<List<Agenda>>
 
+    @Query("SELECT * FROM agenda WHERE id = :id")
+    suspend fun getById(id: String): Agenda?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(agenda: Agenda)
 

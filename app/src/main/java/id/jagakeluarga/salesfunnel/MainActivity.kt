@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import id.jagakeluarga.salesfunnel.notification.AgendaReminderWorker
 import id.jagakeluarga.salesfunnel.ui.AppViewModel
 import id.jagakeluarga.salesfunnel.ui.navigation.AdaptiveScaffold
 import id.jagakeluarga.salesfunnel.ui.navigation.Destination
@@ -37,7 +38,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
-            var current by remember { mutableStateOf(Destination.BERANDA) }
+            var current by remember {
+                mutableStateOf(
+                    if (intent?.action == AgendaReminderWorker.ACTION_OPEN_AGENDA) Destination.AGENDA else Destination.BERANDA,
+                )
+            }
             var selectedProspekId by remember { mutableStateOf<String?>(null) }
             val settings = remember { getSharedPreferences("sales_funnel_settings", MODE_PRIVATE) }
             var namaAgen by remember {
@@ -104,6 +109,8 @@ class MainActivity : ComponentActivity() {
                                 agendaList = agendaList,
                                 namaAgen = namaAgen,
                                 onHomeClick = { current = Destination.BERANDA },
+                                onBukaAgenda = { current = Destination.AGENDA },
+                                onTandaiAgendaSelesai = { agenda -> viewModel.saveAgenda(agenda.copy(selesai = true)) },
                             )
                             Destination.PIPELINE -> PipelineScreen(
                                 windowSizeClass = windowSizeClass,
@@ -124,6 +131,7 @@ class MainActivity : ComponentActivity() {
                                 prospekList = prospekList,
                                 onSimpan = viewModel::saveAgenda,
                                 onHapus = viewModel::deleteAgenda,
+                                onToggleSelesai = { agenda -> viewModel.saveAgenda(agenda.copy(selesai = !agenda.selesai)) },
                             )
                             Destination.NASABAH -> NasabahScreen(
                                 nasabahList = nasabahList,

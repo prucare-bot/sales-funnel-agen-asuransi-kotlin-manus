@@ -12,6 +12,10 @@
         android:theme="@style/Theme.SalesFunnel"
         android:supportsRtl="true">
 
+        <receiver
+            android:name=".notification.AgendaReminderActionReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
