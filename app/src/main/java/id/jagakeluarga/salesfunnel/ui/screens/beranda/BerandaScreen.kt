@@ -70,35 +70,7 @@ fun BerandaScreen(
     }
     val totalProspekAktif = prospekInsight.count { it.tahap != TahapPipeline.CLOSING }
 
-    val tanggalHariIni = remember { SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID")).format(Date()) }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.background(
-                    Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))
-                ),
-                title = {
-                    Column {
-                        Text(tanggalHariIni, color = MaterialTheme.colorScheme.onPrimary)
-                        Text("Beranda · $namaAgen", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showQuickSearch = true }) {
-                        Icon(Icons.Filled.Search, contentDescription = "Pencarian cepat")
-                    }
-                    IconButton(onClick = onHomeClick) {
-                        Icon(Icons.Filled.Home, contentDescription = "Beranda")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            )
-        },
-    ) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
