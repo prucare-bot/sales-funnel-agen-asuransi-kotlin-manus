@@ -30,6 +30,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun saveProspek(prospek: Prospek) = viewModelScope.launch { repository.saveProspek(prospek) }
     fun deleteProspek(prospek: Prospek) = viewModelScope.launch { repository.deleteProspek(prospek) }
 
+    fun statusHistoryForProspek(prospekId: String) = repository.statusHistoryForProspek(prospekId)
+
+    fun convertProspekToNasabah(
+        prospek: Prospek,
+        produk: String,
+        nomorPolis: String?,
+        onResult: (SalesFunnelRepository.ConversionResult) -> Unit,
+    ) = viewModelScope.launch {
+        val result = repository.convertProspekToNasabah(prospek, produk, nomorPolis)
+        if (result is SalesFunnelRepository.ConversionResult.Created) {
+            BirthdayReminderScheduler.schedule(getApplication(), result.nasabah)
+        }
+        onResult(result)
+    }
+
     fun saveAgenda(agenda: Agenda) = viewModelScope.launch {
         repository.saveAgenda(agenda)
         AgendaScheduler.schedule(getApplication(), agenda)

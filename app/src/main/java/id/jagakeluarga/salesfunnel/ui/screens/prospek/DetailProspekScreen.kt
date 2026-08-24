@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory
 import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
 import id.jagakeluarga.salesfunnel.ui.common.warnaTahap
 import java.text.SimpleDateFormat
@@ -34,9 +36,12 @@ import java.util.*
 fun DetailProspekScreen(
     prospek: Prospek,
     riwayatAgenda: List<Agenda>,
+    riwayatStatus: List<ProspekStatusHistory> = emptyList(),
+    sudahJadiNasabah: Boolean = false,
     onKembali: () -> Unit,
     onSimpanProspek: (Prospek) -> Unit,
     onHapusProspek: (Prospek) -> Unit,
+    onKonversiNasabah: (Prospek, String, String?, (String) -> Unit) -> Unit = { _, _, _, _ -> },
     onSimpanAgenda: (Agenda) -> Unit,
     onToggleSelesai: (Agenda) -> Unit,
 ) {
@@ -44,6 +49,8 @@ fun DetailProspekScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showHapusConfirm by remember { mutableStateOf(false) }
     var showTambahAgenda by remember { mutableStateOf(false) }
+    var showKonversiDialog by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf<String?>(null) }
     val warna = warnaTahap(prospek.tahap)
 
     Scaffold(
@@ -115,7 +122,38 @@ fun DetailProspekScreen(
             prospek.sumberProspek?.let { Text("Sumber: $it", style = MaterialTheme.typography.bodyMedium) }
             prospek.catatan?.let { Text("Catatan: $it", style = MaterialTheme.typography.bodyMedium) }
 
+            if (sudahJadiNasabah) {
+                AssistChip(onClick = {}, label = { Text("Sudah menjadi nasabah") })
+            } else {
+                OutlinedButton(onClick = { showKonversiDialog = true }) {
+                    Icon(Icons.Filled.PersonAdd, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Jadikan Nasabah")
+                }
+            }
+            conversionMessage?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
             HorizontalDivider()
+
+            Text("Riwayat Tahap Funnel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (riwayatStatus.isEmpty()) {
+                Text(
+                    "Riwayat status akan tercatat saat tahap Prospek disimpan atau dikonversi.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val statusFmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                riwayatStatus.sortedByDescending { it.diubahPada }.forEach { history ->
+                    ListItem(
+                        headlineContent = { Text(history.tahap.label, fontWeight = FontWeight.SemiBold) },
+                        supportingContent = { Text(statusFmt.format(Date(history.diubahPada))) },
+                    )
+                    HorizontalDivider()
+                }
+            }
 
             Text("Riwayat Follow-up", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
@@ -140,6 +178,18 @@ fun DetailProspekScreen(
                 }
             }
         }
+    }
+
+    if (showKonversiDialog) {
+        KonversiNasabahDialog(
+            onDismiss = { showKonversiDialog = false },
+            onConfirm = { produk, nomorPolis ->
+                onKonversiNasabah(prospek, produk, nomorPolis) { message ->
+                    conversionMessage = message
+                    showKonversiDialog = false
+                }
+            },
+        )
     }
 
     if (showEditDialog) {
@@ -172,6 +222,46 @@ fun DetailProspekScreen(
             },
         )
     }
+}
+
+@Composable
+private fun KonversiNasabahDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (produk: String, nomorPolis: String?) -> Unit,
+) {
+    var produk by remember { mutableStateOf("") }
+    var nomorPolis by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Jadikan Nasabah") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Data nama dan nomor HP/WA prospek akan disalin ke data nasabah.")
+                OutlinedTextField(
+                    value = produk,
+                    onValueChange = { produk = it },
+                    label = { Text("Produk") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = nomorPolis,
+                    onValueChange = { nomorPolis = it },
+                    label = { Text("No. Polis (opsional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = produk.isNotBlank(),
+                onClick = { onConfirm(produk, nomorPolis.ifBlank { null }) },
+            ) { Text("Konversi") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
+    )
 }
 
 @Composable

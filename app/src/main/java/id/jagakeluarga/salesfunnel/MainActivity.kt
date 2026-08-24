@@ -68,12 +68,25 @@ class MainActivity : ComponentActivity() {
 
             SalesFunnelTheme(theme = tema) {
                 if (prospekTerpilih != null) {
+                    val riwayatStatus by viewModel.statusHistoryForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
                     DetailProspekScreen(
                         prospek = prospekTerpilih,
                         riwayatAgenda = agendaList.filter { it.prospekId == prospekTerpilih.id },
+                        riwayatStatus = riwayatStatus,
+                        sudahJadiNasabah = nasabahList.any { it.prospekAsalId == prospekTerpilih.id },
                         onKembali = { selectedProspekId = null },
                         onSimpanProspek = viewModel::saveProspek,
                         onHapusProspek = { viewModel.deleteProspek(it) },
+                        onKonversiNasabah = { prospek, produk, nomorPolis, onResult ->
+                            viewModel.convertProspekToNasabah(prospek, produk, nomorPolis) { result ->
+                                val message = when (result) {
+                                    is id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository.ConversionResult.Created -> "Nasabah berhasil dibuat."
+                                    is id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository.ConversionResult.AlreadyConverted -> "Prospek ini sudah menjadi nasabah."
+                                    is id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository.ConversionResult.DuplicatePhone -> "Nomor HP/WA sudah digunakan oleh nasabah lain."
+                                }
+                                onResult(message)
+                            }
+                        },
                         onSimpanAgenda = viewModel::saveAgenda,
                         onToggleSelesai = { agenda -> viewModel.saveAgenda(agenda.copy(selesai = !agenda.selesai)) },
                     )
@@ -100,6 +113,8 @@ class MainActivity : ComponentActivity() {
                             )
                             Destination.PROSPEK -> ProspekScreen(
                                 prospekList = prospekList,
+                                nasabahList = nasabahList,
+                                agendaList = agendaList,
                                 onSimpan = viewModel::saveProspek,
                                 onHapus = viewModel::deleteProspek,
                                 onBukaDetail = { selectedProspekId = it.id },

@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
@@ -37,6 +38,8 @@ import id.jagakeluarga.salesfunnel.whatsapp.WhatsAppHelper
 @Composable
 fun ProspekScreen(
     prospekList: List<Prospek>,
+    nasabahList: List<id.jagakeluarga.salesfunnel.data.entity.Nasabah> = emptyList(),
+    agendaList: List<id.jagakeluarga.salesfunnel.data.entity.Agenda> = emptyList(),
     onSimpan: (Prospek) -> Unit,
     onHapus: (Prospek) -> Unit,
     onBukaDetail: (Prospek) -> Unit,
@@ -46,15 +49,33 @@ fun ProspekScreen(
     var tanggalMulai by remember { mutableStateOf<Long?>(null) }
     var tanggalAkhir by remember { mutableStateOf<Long?>(null) }
     var tahapFilter by remember { mutableStateOf<TahapPipeline?>(null) }
+    var hanyaBelumKonversi by remember { mutableStateOf(false) }
+    var hanyaTanpaFollowUp by remember { mutableStateOf(false) }
     var showFilter by remember { mutableStateOf(false) }
 
-    val hasilFilter = remember(prospekList, kataKunci, tanggalMulai, tanggalAkhir, tahapFilter) {
+    val hasilFilter = remember(
+        prospekList,
+        nasabahList,
+        agendaList,
+        kataKunci,
+        tanggalMulai,
+        tanggalAkhir,
+        tahapFilter,
+        hanyaBelumKonversi,
+        hanyaTanpaFollowUp,
+    ) {
         prospekList.filter { prospek ->
-            val cocokNama = kataKunci.isBlank() || prospek.nama.contains(kataKunci, ignoreCase = true)
+            val cocokKataKunci = kataKunci.isBlank() ||
+                prospek.nama.contains(kataKunci, ignoreCase = true) ||
+                prospek.nomorTelepon.orEmpty().contains(kataKunci, ignoreCase = true)
             val cocokMulai = tanggalMulai == null || prospek.dibuatPada >= tanggalMulai!!
             val cocokAkhir = tanggalAkhir == null || prospek.dibuatPada <= tanggalAkhir!!
             val cocokTahap = tahapFilter == null || prospek.tahap == tahapFilter
-            cocokNama && cocokMulai && cocokAkhir && cocokTahap
+            val sudahDikonversi = nasabahList.any { it.prospekAsalId == prospek.id }
+            val punyaFollowUp = agendaList.any { it.prospekId == prospek.id }
+            val cocokKonversi = !hanyaBelumKonversi || !sudahDikonversi
+            val cocokFollowUp = !hanyaTanpaFollowUp || !punyaFollowUp
+            cocokKataKunci && cocokMulai && cocokAkhir && cocokTahap && cocokKonversi && cocokFollowUp
         }
     }
 
@@ -88,13 +109,34 @@ fun ProspekScreen(
             ) {
                 Icon(Icons.Filled.FilterList, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (tanggalMulai != null || tanggalAkhir != null || tahapFilter != null) "Filter aktif" else "Filter tanggal & status")
+                Text(
+                    if (tanggalMulai != null || tanggalAkhir != null || tahapFilter != null || hanyaBelumKonversi || hanyaTanpaFollowUp) "Filter aktif" else "Filter tanggal & status",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = hanyaBelumKonversi,
+                    onClick = { hanyaBelumKonversi = !hanyaBelumKonversi },
+                    label = { Text("Belum nasabah", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    modifier = Modifier.weight(1f),
+                )
+                FilterChip(
+                    selected = hanyaTanpaFollowUp,
+                    onClick = { hanyaTanpaFollowUp = !hanyaTanpaFollowUp },
+                    label = { Text("Tanpa follow-up", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    modifier = Modifier.weight(1f),
+                )
             }
 
             if (hasilFilter.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        if (kataKunci.isBlank() && tanggalMulai == null && tanggalAkhir == null && tahapFilter == null) "Belum ada prospek" else "Tidak ada prospek yang sesuai filter",
+                        if (kataKunci.isBlank() && tanggalMulai == null && tanggalAkhir == null && tahapFilter == null && !hanyaBelumKonversi && !hanyaTanpaFollowUp) "Belum ada prospek" else "Tidak ada prospek yang sesuai filter",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
