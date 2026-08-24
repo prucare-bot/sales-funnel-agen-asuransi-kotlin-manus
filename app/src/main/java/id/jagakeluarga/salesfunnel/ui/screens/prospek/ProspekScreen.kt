@@ -2,7 +2,9 @@ package id.jagakeluarga.salesfunnel.ui.screens.prospek
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.core.tween
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
@@ -28,9 +31,9 @@ fun ProspekScreen(
     prospekList: List<Prospek>,
     onSimpan: (Prospek) -> Unit,
     onHapus: (Prospek) -> Unit,
+    onBukaDetail: (Prospek) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var editing by remember { mutableStateOf<Prospek?>(null) }
     var kataKunci by remember { mutableStateOf("") }
 
     val hasilFilter = remember(prospekList, kataKunci) {
@@ -44,7 +47,7 @@ fun ProspekScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Daftar Prospek") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { editing = null; showDialog = true }) { Text("+") }
+            FloatingActionButton(onClick = { showDialog = true }) { Text("+") }
         },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -65,7 +68,7 @@ fun ProspekScreen(
             )
 
             if (hasilFilter.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         if (kataKunci.isBlank()) "Belum ada prospek" else "Tidak ditemukan \"$kataKunci\"",
                         style = MaterialTheme.typography.bodyMedium,
@@ -80,7 +83,7 @@ fun ProspekScreen(
                     items(hasilFilter, key = { it.id }) { prospek ->
                         SwipeableProspekItem(
                             prospek = prospek,
-                            onKlik = { editing = prospek; showDialog = true },
+                            onKlik = { onBukaDetail(prospek) },
                             onHapus = { onHapus(prospek) },
                         )
                         HorizontalDivider()
@@ -92,7 +95,7 @@ fun ProspekScreen(
 
     if (showDialog) {
         ProspekDialog(
-            initial = editing,
+            initial = null,
             onDismiss = { showDialog = false },
             onSimpan = { onSimpan(it); showDialog = false },
         )
@@ -167,30 +170,73 @@ private fun SwipeableProspekItem(
 }
 
 @Composable
-private fun ProspekDialog(
+fun ProspekDialog(
     initial: Prospek?,
     onDismiss: () -> Unit,
     onSimpan: (Prospek) -> Unit,
 ) {
+    val context = LocalContext.current
     var nama by remember { mutableStateOf(initial?.nama ?: "") }
     var telepon by remember { mutableStateOf(initial?.nomorTelepon ?: "") }
     var tahap by remember { mutableStateOf(initial?.tahap ?: TahapPipeline.PROSPEK) }
     var expanded by remember { mutableStateOf(false) }
+
+    // Ambil nama + nomor dari Kontak HP (termasuk kontak yang juga dipakai di WhatsApp,
+    // karena WhatsApp mencocokkan nomor lewat kontak HP yang sama -- tidak ada API
+    // resmi untuk baca daftar kontak WhatsApp secara langsung dari app lain).
+    val pickContactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { uri: Uri? ->
+        uri?.let { contactUri ->
+            context.contentResolver.query(contactUri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIdx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                    if (nameIdx >= 0) cursor.getString(nameIdx)?.let { nama = it }
+
+                    val idIdx = cursor.getColumnIndex(ContactsContract.Contacts._ID)
+                    val contactId = if (idIdx >= 0) cursor.getString(idIdx) else null
+
+                    contactId?.let { cid ->
+                        context.contentResolver.query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                            arrayOf(cid),
+                            null,
+                        )?.use { phoneCursor ->
+                            if (phoneCursor.moveToFirst()) {
+                                val numIdx = phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                                if (numIdx >= 0) phoneCursor.getString(numIdx)?.let { telepon = it }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "Tambah Prospek" else "Edit Prospek") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(nama, { nama = it }, label = { Text("Nama") })
-                OutlinedTextField(telepon, { telepon = it }, label = { Text("No. Telepon") })
+                OutlinedButton(
+                    onClick = { pickContactLauncher.launch(null) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Pilih dari Kontak HP")
+                }
+                OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(telepon, { telepon = it }, label = { Text("No. Telepon") }, modifier = Modifier.fillMaxWidth())
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
                         value = tahap.label,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tahap") },
-                        modifier = Modifier.menuAnchor(),
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         TahapPipeline.entries.forEach { t ->
