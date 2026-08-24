@@ -1,11 +1,11 @@
 package id.jagakeluarga.salesfunnel.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -51,8 +51,16 @@ fun AdaptiveScaffold(
                 AnimatedContent(
                     targetState = current,
                     transitionSpec = {
-                        (fadeIn() + slideInHorizontally { it / 8 }) togetherWith
-                            (fadeOut() + slideOutHorizontally { -it / 8 })
+                        val maju = targetState.ordinal > initialState.ordinal
+                        val masuk = slideInHorizontally(
+                            initialOffsetX = { width -> if (maju) width else -width },
+                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                        )
+                        val keluar = slideOutHorizontally(
+                            targetOffsetX = { width -> if (maju) -width else width },
+                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                        )
+                        masuk togetherWith keluar
                     },
                     label = "menu_transition_rail",
                 ) { content() }
@@ -77,8 +85,16 @@ fun AdaptiveScaffold(
                 AnimatedContent(
                     targetState = current,
                     transitionSpec = {
-                        (fadeIn() + slideInHorizontally { it / 8 }) togetherWith
-                            (fadeOut() + slideOutHorizontally { -it / 8 })
+                        val maju = targetState.ordinal > initialState.ordinal
+                        val masuk = slideInHorizontally(
+                            initialOffsetX = { width -> if (maju) width else -width },
+                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                        )
+                        val keluar = slideOutHorizontally(
+                            targetOffsetX = { width -> if (maju) -width else width },
+                            animationSpec = tween(320, easing = FastOutSlowInEasing),
+                        )
+                        masuk togetherWith keluar
                     },
                     label = "menu_transition_bottom",
                 ) { content() }
