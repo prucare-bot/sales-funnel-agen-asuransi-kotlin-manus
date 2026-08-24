@@ -150,7 +150,7 @@ private fun CozyBottomBar(current: Destination, onNavigate: (Destination) -> Uni
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = colors.onPrimary,
                         selectedTextColor = colors.onPrimary,
-                        selectedIndicatorColor = colors.onPrimary.copy(alpha = 0.18f),
+                        indicatorColor = colors.onPrimary.copy(alpha = 0.18f),
                         unselectedIconColor = colors.onPrimary.copy(alpha = 0.78f),
                         unselectedTextColor = colors.onPrimary.copy(alpha = 0.78f),
                     ),
