@@ -58,7 +58,11 @@ fun NasabahScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(nasabahList, key = { it.id }) { nasabah ->
-                ListItem(
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    ListItem(
                     headlineContent = { Text(nasabah.nama) },
                     supportingContent = {
                         val lahir = nasabah.tanggalLahir?.let { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(it)) } ?: "Tanggal lahir belum diisi"
@@ -77,8 +81,8 @@ fun NasabahScreen(
                             }
                         }
                     },
-                )
-                HorizontalDivider()
+                    )
+                }
             }
         }
     }

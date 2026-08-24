@@ -1,9 +1,12 @@
 package id.jagakeluarga.salesfunnel.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 
 enum class AppThemeColor(val label: String) {
     HIJAU("Hijau"),
@@ -68,5 +71,14 @@ fun SalesFunnelTheme(
     darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(colorScheme = appColorScheme(theme), content = content)
+    MaterialTheme(
+        colorScheme = appColorScheme(theme),
+        shapes = Shapes(
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(28.dp),
+            extraLarge = RoundedCornerShape(32.dp),
+        ),
+        content = content,
+    )
 }

@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -217,6 +218,7 @@ private fun SwipeableProspekItem(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.clip(MaterialTheme.shapes.medium),
         backgroundContent = {
             val (warna, ikon, alignment) = when (dismissState.dismissDirection) {
                 SwipeToDismissBoxValue.StartToEnd -> Triple(Color(0xFF10B981), Icons.Filled.Phone, Alignment.CenterStart)
@@ -231,7 +233,11 @@ private fun SwipeableProspekItem(
             }
         },
     ) {
-        ListItem(
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            ListItem(
             headlineContent = { Text(prospek.nama) },
             supportingContent = { Text("${prospek.tahap.label} · No HP/WA: ${prospek.nomorTelepon ?: "-"}") },
             trailingContent = {
@@ -241,7 +247,8 @@ private fun SwipeableProspekItem(
                 ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
             },
             modifier = Modifier.clickable(onClick = onKlik),
-        )
+            )
+        }
     }
 
     if (showTemplateDialog) {

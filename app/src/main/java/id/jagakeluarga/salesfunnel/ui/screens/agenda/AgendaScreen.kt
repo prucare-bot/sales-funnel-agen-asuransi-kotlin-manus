@@ -74,7 +74,11 @@ fun AgendaScreen(
             items(agendaList, key = { it.id }) { agenda ->
                 val namaProspek = prospekList.find { it.id == agenda.prospekId }?.nama ?: "(prospek dihapus)"
                 val terlambat = !agenda.selesai && agenda.waktuMulai < System.currentTimeMillis()
-                ListItem(
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    ListItem(
                     leadingContent = {
                         Checkbox(
                             checked = agenda.selesai,
@@ -113,8 +117,8 @@ fun AgendaScreen(
                             }
                         }
                     },
-                )
-                HorizontalDivider()
+                    )
+                }
             }
         }
     }
