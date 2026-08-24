@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
 import id.jagakeluarga.salesfunnel.ui.common.warnaTahap
 import java.text.SimpleDateFormat
 import java.util.*
@@ -176,6 +177,7 @@ private fun TambahFollowUpDialog(
 ) {
     var judul by remember { mutableStateOf("") }
     var jenis by remember { mutableStateOf(JenisAgenda.LAINNYA) }
+    var waktuMulai by remember { mutableStateOf(System.currentTimeMillis() + 24 * 60 * 60 * 1000) }
     var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -195,17 +197,16 @@ private fun TambahFollowUpDialog(
                         }
                     }
                 }
-                Text(
-                    "Dijadwalkan besok, jam yang sama. Ubah lewat tab Agenda kalau perlu waktu lain.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                DateTimePickerField(
+                    selectedMillis = waktuMulai,
+                    onSelectedMillisChange = { waktuMulai = it },
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 if (judul.isNotBlank()) {
-                    onSimpan(Triple(judul, jenis, System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+                    onSimpan(Triple(judul.trim(), jenis, waktuMulai))
                 }
             }) { Text("Simpan") }
         },

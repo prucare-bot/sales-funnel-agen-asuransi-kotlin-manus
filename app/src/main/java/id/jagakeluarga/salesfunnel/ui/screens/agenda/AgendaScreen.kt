@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -99,6 +100,9 @@ private fun AgendaDialog(
         )
     }
     var jenis by remember(agendaAwal) { mutableStateOf(agendaAwal?.jenis ?: JenisAgenda.LAINNYA) }
+    var waktuMulai by remember(agendaAwal) {
+        mutableStateOf(agendaAwal?.waktuMulai ?: (System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+    }
     var pencarianProspek by remember { mutableStateOf("") }
     var expandedProspek by remember { mutableStateOf(false) }
     var expandedJenis by remember { mutableStateOf(false) }
@@ -166,6 +170,10 @@ private fun AgendaDialog(
                         }
                     }
                 }
+                DateTimePickerField(
+                    selectedMillis = waktuMulai,
+                    onSelectedMillisChange = { waktuMulai = it },
+                )
                 ExposedDropdownMenuBox(
                     expanded = expandedJenis,
                     onExpandedChange = { expandedJenis = it },
@@ -198,11 +206,12 @@ private fun AgendaDialog(
                         prospekId = prospek.id,
                         judul = judul.trim(),
                         jenis = jenis,
+                        waktuMulai = waktuMulai,
                     ) ?: Agenda(
                         prospekId = prospek.id,
                         judul = judul.trim(),
                         jenis = jenis,
-                        waktuMulai = System.currentTimeMillis() + 24 * 60 * 60 * 1000,
+                        waktuMulai = waktuMulai,
                     )
                     onSimpan(agenda)
                 }
