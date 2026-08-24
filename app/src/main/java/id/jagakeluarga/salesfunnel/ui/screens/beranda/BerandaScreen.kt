@@ -107,7 +107,7 @@ fun BerandaScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Text("$sapaan, $namaAgen 👋", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            HeroWelcomeCard(sapaan = sapaan, namaAgen = namaAgen)
 
             ExposedDropdownMenuBox(
                 expanded = periodeMenuTerbuka,
@@ -209,6 +209,35 @@ fun BerandaScreen(
             },
             confirmButton = { TextButton(onClick = { showQuickSearch = false; quickSearchQuery = "" }) { Text("Tutup") } },
         )
+    }
+}
+
+@Composable
+private fun HeroWelcomeCard(sapaan: String, namaAgen: String) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary)))
+            .padding(20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(colors.onPrimary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Home, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(32.dp))
+            }
+            Column {
+                Text(sapaan, style = MaterialTheme.typography.titleMedium, color = colors.onPrimary.copy(alpha = 0.88f))
+                Text(namaAgen, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = colors.onPrimary)
+                Text("Kelola prospek dan agenda Anda hari ini.", style = MaterialTheme.typography.bodySmall, color = colors.onPrimary.copy(alpha = 0.82f))
+            }
+        }
     }
 }
 

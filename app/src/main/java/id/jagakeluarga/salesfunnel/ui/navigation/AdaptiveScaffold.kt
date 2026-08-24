@@ -1,160 +1,188 @@
 package id.jagakeluarga.salesfunnel.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
-/**
- * Bottom nav bar on compact width (phones in portrait), navigation rail
- * on medium/expanded width (phones landscape, foldables, tablets).
- */
 @Composable
 fun AdaptiveScaffold(
     windowSizeClass: WindowSizeClass,
     current: Destination,
     onNavigate: (Destination) -> Unit,
     onQuickSearch: () -> Unit = {},
+    headerSubtitle: String = "",
     content: @Composable (Destination) -> Unit,
 ) {
     val useRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
 
     if (useRail) {
-        Row(Modifier) {
-            NavigationRail {
-                Destination.entries.forEach { dest ->
-                    NavigationRailItem(
-                        selected = dest == current,
-                        onClick = { onNavigate(dest) },
-                        icon = { Icon(dest.icon, contentDescription = dest.label) },
-                        label = { Text(dest.label) },
-                    )
+        Row(Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)))
+                    .padding(vertical = 12.dp),
+            ) {
+                NavigationRail(containerColor = Color.Transparent) {
+                    Destination.entries.forEach { dest ->
+                        NavigationRailItem(
+                            selected = dest == current,
+                            onClick = { onNavigate(dest) },
+                            icon = { Icon(dest.icon, contentDescription = dest.label) },
+                            label = { Text(dest.label) },
+                            colors = NavigationRailItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                                indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                                unselectedTextColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                            ),
+                        )
+                    }
                 }
             }
             Column(Modifier.fillMaxSize()) {
-                if (current != Destination.BERANDA) GlobalHeader(current, onNavigate, onQuickSearch)
-                Box(Modifier.padding(16.dp).weight(1f)) {
-                AnimatedContent(
-                    targetState = current,
-                    transitionSpec = {
-                        val maju = targetState.ordinal > initialState.ordinal
-                        val masuk = fadeIn(
-                            initialAlpha = 0.88f,
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        ) + slideInHorizontally(
-                            initialOffsetX = { width -> if (maju) width else -width },
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        )
-                        val keluar = fadeOut(
-                            targetAlpha = 0.88f,
-                            animationSpec = tween(300, easing = FastOutSlowInEasing),
-                        ) + slideOutHorizontally(
-                            targetOffsetX = { width -> if (maju) -width else width },
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        )
-                        masuk togetherWith keluar
-                    },
-                    label = "menu_transition_rail",
-                ) { destination -> content(destination) }
+                GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch)
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).weight(1f)) {
+                    AnimatedMenuContent(current, "menu_transition_rail", content)
                 }
             }
         }
     } else {
         Scaffold(
-            topBar = { if (current != Destination.BERANDA) GlobalHeader(current, onNavigate, onQuickSearch) },
-            bottomBar = {
-                NavigationBar {
-                    Destination.entries.forEach { dest ->
-                        NavigationBarItem(
-                            selected = dest == current,
-                            onClick = { onNavigate(dest) },
-                            icon = { Icon(dest.icon, contentDescription = dest.label) },
-                            label = { Text(dest.label) },
-                        )
-                    }
-                }
-            }
+            topBar = { GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch) },
+            bottomBar = { CozyBottomBar(current, onNavigate) },
         ) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                AnimatedContent(
-                    targetState = current,
-                    transitionSpec = {
-                        val maju = targetState.ordinal > initialState.ordinal
-                        val masuk = fadeIn(
-                            initialAlpha = 0.88f,
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        ) + slideInHorizontally(
-                            initialOffsetX = { width -> if (maju) width else -width },
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        )
-                        val keluar = fadeOut(
-                            targetAlpha = 0.88f,
-                            animationSpec = tween(300, easing = FastOutSlowInEasing),
-                        ) + slideOutHorizontally(
-                            targetOffsetX = { width -> if (maju) -width else width },
-                            animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        )
-                        masuk togetherWith keluar
-                    },
-                    label = "menu_transition_bottom",
-                ) { destination -> content(destination) }
+            Box(Modifier.padding(padding)) {
+                AnimatedMenuContent(current, "menu_transition_bottom", content)
             }
         }
     }
 }
 
+@Composable
+private fun AnimatedMenuContent(
+    current: Destination,
+    label: String,
+    content: @Composable (Destination) -> Unit,
+) {
+    AnimatedContent(
+        targetState = current,
+        transitionSpec = {
+            val maju = targetState.ordinal >= initialState.ordinal
+            val masuk = fadeIn(tween(280, easing = FastOutSlowInEasing)) + slideInHorizontally(
+                initialOffsetX = { width -> if (maju) width / 3 else -width / 3 },
+                animationSpec = tween(320, easing = FastOutSlowInEasing),
+            )
+            val keluar = fadeOut(tween(220, easing = FastOutSlowInEasing)) + slideOutHorizontally(
+                targetOffsetX = { width -> if (maju) -width / 4 else width / 4 },
+                animationSpec = tween(280, easing = FastOutSlowInEasing),
+            )
+            masuk togetherWith keluar
+        },
+        label = label,
+    ) { destination -> content(destination) }
+}
+
+@Composable
+private fun CozyBottomBar(current: Destination, onNavigate: (Destination) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary)))
+            .padding(horizontal = 4.dp, vertical = 5.dp),
+    ) {
+        NavigationBar(
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+        ) {
+            Destination.entries.forEach { dest ->
+                NavigationBarItem(
+                    selected = dest == current,
+                    onClick = { onNavigate(dest) },
+                    icon = { Icon(dest.icon, contentDescription = dest.label) },
+                    label = { Text(dest.label) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = colors.onPrimary,
+                        selectedTextColor = colors.onPrimary,
+                        selectedIndicatorColor = colors.onPrimary.copy(alpha = 0.18f),
+                        unselectedIconColor = colors.onPrimary.copy(alpha = 0.78f),
+                        unselectedTextColor = colors.onPrimary.copy(alpha = 0.78f),
+                    ),
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun GlobalHeader(
     current: Destination,
+    headerSubtitle: String,
     onNavigate: (Destination) -> Unit,
     onQuickSearch: () -> Unit,
 ) {
     val dateText = remember { SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID")).format(Date()) }
-    val colors = androidx.compose.material3.MaterialTheme.colorScheme
+    val colors = MaterialTheme.colorScheme
     TopAppBar(
-        modifier = Modifier.fillMaxWidth().background(
-            Brush.horizontalGradient(listOf(colors.primary, colors.secondary))
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary))),
+        navigationIcon = {
+            Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = colors.onPrimary)
+        },
         title = {
             Column {
-                Text(dateText, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
-                Text(current.label, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                Text(dateText, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (headerSubtitle.isBlank()) current.label else "${current.label} · $headerSubtitle",
+                    style = MaterialTheme.typography.labelMedium,
+                )
             }
         },
         actions = {
@@ -168,6 +196,7 @@ private fun GlobalHeader(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
             titleContentColor = colors.onPrimary,
+            navigationIconContentColor = colors.onPrimary,
             actionIconContentColor = colors.onPrimary,
         ),
     )

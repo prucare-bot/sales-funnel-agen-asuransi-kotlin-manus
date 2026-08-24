@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
                         current = current,
                         onNavigate = { current = it },
                         onQuickSearch = { current = Destination.PROSPEK },
+                        headerSubtitle = namaAgen,
                     ) { destination ->
                         when (destination) {
                             Destination.BERANDA -> BerandaScreen(
