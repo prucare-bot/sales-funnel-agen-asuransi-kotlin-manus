@@ -1,10 +1,14 @@
 package id.jagakeluarga.salesfunnel.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIntoContainer
+import androidx.compose.animation.slideOutOfContainer
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -51,13 +55,19 @@ fun AdaptiveScaffold(
                     targetState = current,
                     transitionSpec = {
                         val maju = targetState.ordinal > initialState.ordinal
-                        val masuk = slideInHorizontally(
-                            initialOffsetX = { width -> if (maju) width else -width },
-                            animationSpec = spring(dampingRatio = 0.92f, stiffness = 520f),
+                        val masuk = fadeIn(
+                            initialAlpha = 0.88f,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
+                        ) + slideIntoContainer(
+                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
-                        val keluar = slideOutHorizontally(
-                            targetOffsetX = { width -> if (maju) -width else width },
-                            animationSpec = spring(dampingRatio = 0.92f, stiffness = 520f),
+                        val keluar = fadeOut(
+                            targetAlpha = 0.88f,
+                            animationSpec = tween(300, easing = FastOutSlowInEasing),
+                        ) + slideOutOfContainer(
+                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         masuk togetherWith keluar
                     },
@@ -85,13 +95,19 @@ fun AdaptiveScaffold(
                     targetState = current,
                     transitionSpec = {
                         val maju = targetState.ordinal > initialState.ordinal
-                        val masuk = slideInHorizontally(
-                            initialOffsetX = { width -> if (maju) width else -width },
-                            animationSpec = spring(dampingRatio = 0.92f, stiffness = 520f),
+                        val masuk = fadeIn(
+                            initialAlpha = 0.88f,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
+                        ) + slideIntoContainer(
+                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
-                        val keluar = slideOutHorizontally(
-                            targetOffsetX = { width -> if (maju) -width else width },
-                            animationSpec = spring(dampingRatio = 0.92f, stiffness = 520f),
+                        val keluar = fadeOut(
+                            targetAlpha = 0.88f,
+                            animationSpec = tween(300, easing = FastOutSlowInEasing),
+                        ) + slideOutOfContainer(
+                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         masuk togetherWith keluar
                     },

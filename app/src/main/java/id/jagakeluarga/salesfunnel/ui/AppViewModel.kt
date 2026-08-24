@@ -9,6 +9,7 @@ import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository
 import id.jagakeluarga.salesfunnel.notification.AgendaScheduler
+import id.jagakeluarga.salesfunnel.notification.BirthdayReminderScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -39,6 +40,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         repository.deleteAgenda(agenda)
     }
 
-    fun saveNasabah(nasabah: Nasabah) = viewModelScope.launch { repository.saveNasabah(nasabah) }
-    fun deleteNasabah(nasabah: Nasabah) = viewModelScope.launch { repository.deleteNasabah(nasabah) }
+    fun saveNasabah(nasabah: Nasabah) = viewModelScope.launch {
+        repository.saveNasabah(nasabah)
+        BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
+        BirthdayReminderScheduler.schedule(getApplication(), nasabah)
+    }
+    fun deleteNasabah(nasabah: Nasabah) = viewModelScope.launch {
+        BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
+        repository.deleteNasabah(nasabah)
+    }
 }

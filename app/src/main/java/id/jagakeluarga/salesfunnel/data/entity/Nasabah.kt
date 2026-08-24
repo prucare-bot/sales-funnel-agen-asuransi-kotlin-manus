@@ -10,6 +10,7 @@ data class Nasabah(
     val prospekAsalId: String? = null,
     val nama: String,
     val nomorTelepon: String? = null,
+    val tanggalLahir: Long? = null,
     val produk: String,
     val nomorPolis: String? = null,
     val premi: Long? = null,
