@@ -7,7 +7,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import id.jagakeluarga.salesfunnel.R
+import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import java.util.Calendar
 
 class BirthdayReminderWorker(
@@ -45,7 +45,7 @@ class BirthdayReminderWorker(
         }
         BirthdayReminderScheduler.schedule(
             applicationContext,
-            id.jagakeluarga.salesfunnel.data.entity.Nasabah(
+            Nasabah(
                 id = inputData.getString(KEY_ID) ?: "worker-$name",
                 nama = name,
                 nomorTelepon = inputData.getString(KEY_PHONE),

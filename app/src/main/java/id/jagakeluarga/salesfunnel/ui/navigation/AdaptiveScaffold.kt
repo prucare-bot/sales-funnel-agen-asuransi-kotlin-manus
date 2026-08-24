@@ -1,11 +1,10 @@
 package id.jagakeluarga.salesfunnel.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIntoContainer
-import androidx.compose.animation.slideOutOfContainer
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -58,15 +57,15 @@ fun AdaptiveScaffold(
                         val masuk = fadeIn(
                             initialAlpha = 0.88f,
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        ) + slideIntoContainer(
-                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                        ) + slideInHorizontally(
+                            initialOffsetX = { width -> if (maju) width else -width },
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         val keluar = fadeOut(
                             targetAlpha = 0.88f,
                             animationSpec = tween(300, easing = FastOutSlowInEasing),
-                        ) + slideOutOfContainer(
-                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                        ) + slideOutHorizontally(
+                            targetOffsetX = { width -> if (maju) -width else width },
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         masuk togetherWith keluar
@@ -98,15 +97,15 @@ fun AdaptiveScaffold(
                         val masuk = fadeIn(
                             initialAlpha = 0.88f,
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
-                        ) + slideIntoContainer(
-                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                        ) + slideInHorizontally(
+                            initialOffsetX = { width -> if (maju) width else -width },
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         val keluar = fadeOut(
                             targetAlpha = 0.88f,
                             animationSpec = tween(300, easing = FastOutSlowInEasing),
-                        ) + slideOutOfContainer(
-                            towards = if (maju) AnimatedContentTransitionScope.SlideDirection.Left else AnimatedContentTransitionScope.SlideDirection.Right,
+                        ) + slideOutHorizontally(
+                            targetOffsetX = { width -> if (maju) -width else width },
                             animationSpec = tween(360, easing = FastOutSlowInEasing),
                         )
                         masuk togetherWith keluar
