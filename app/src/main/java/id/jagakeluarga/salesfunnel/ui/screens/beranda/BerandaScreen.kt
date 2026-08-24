@@ -192,7 +192,7 @@ private enum class InsightPeriod(val label: String) {
     LAST_3_MONTHS("Last 3 months"),
     LAST_6_MONTHS("Last 6 months"),
     LAST_12_MONTHS("Last 12 months"),
-    LIFETIME("Lifetime"),
+    LIFETIME("Lifetime");
 
     fun startMillis(now: Long): Long? = when (this) {
         LIFETIME -> null
