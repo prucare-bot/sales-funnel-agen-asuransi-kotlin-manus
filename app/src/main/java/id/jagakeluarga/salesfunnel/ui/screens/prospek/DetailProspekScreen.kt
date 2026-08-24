@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -65,7 +66,9 @@ fun DetailProspekScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showTambahAgenda = true }) { Text("+") }
+            FloatingActionButton(onClick = { showTambahAgenda = true }) {
+                Icon(Icons.Filled.Add, contentDescription = "Tambah follow-up")
+            }
         },
     ) { padding ->
         Column(

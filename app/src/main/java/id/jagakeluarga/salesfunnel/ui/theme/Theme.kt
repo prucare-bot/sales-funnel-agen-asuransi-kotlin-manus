@@ -1,48 +1,41 @@
 package id.jagakeluarga.salesfunnel.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val LightBlue = Color(0xFF5B9BD5)
-private val LightBlueDark = Color(0xFF2F6FAD)
-private val PaleBlue = Color(0xFFF4F9FD)
-private val PaleBlueSurface = Color(0xFFFFFFFF)
-private val DarkBlue = Color(0xFF9CCBEE)
-private val DarkBlueContainer = Color(0xFF1D3A52)
+private val CozyTerracotta = Color(0xFFC9785C)
+private val CozyTerracottaDark = Color(0xFFA95742)
+private val CozyCream = Color(0xFFFFFBF5)
+private val CozySurface = Color(0xFFFFFEFC)
+private val CozyPeach = Color(0xFFFFE6D8)
+private val CozySage = Color(0xFFDDE9D6)
+private val CozyInk = Color(0xFF4A403B)
 
-private val LightColors = lightColorScheme(
-    primary = LightBlueDark,
+private val CozyColors = lightColorScheme(
+    primary = CozyTerracotta,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCEEFF),
-    onPrimaryContainer = Color(0xFF0B2940),
-    secondary = LightBlue,
+    primaryContainer = CozyPeach,
+    onPrimaryContainer = CozyTerracottaDark,
+    secondary = Color(0xFF8FAF86),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3F2FD),
-    onSecondaryContainer = Color(0xFF102A3A),
-    background = PaleBlue,
-    surface = PaleBlueSurface,
-)
-
-private val DarkColors = darkColorScheme(
-    primary = DarkBlue,
-    onPrimary = Color(0xFF07314D),
-    primaryContainer = DarkBlueContainer,
-    onPrimaryContainer = Color(0xFFDCEEFF),
-    secondary = Color(0xFF9DD4F5),
-    onSecondary = Color(0xFF07314D),
-    background = Color(0xFF10171D),
-    surface = Color(0xFF161F27),
+    secondaryContainer = CozySage,
+    onSecondaryContainer = Color(0xFF30422C),
+    tertiary = Color(0xFFD7A957),
+    onTertiary = Color.White,
+    background = CozyCream,
+    onBackground = CozyInk,
+    surface = CozySurface,
+    onSurface = CozyInk,
+    surfaceVariant = Color(0xFFF4EDE5),
+    onSurfaceVariant = Color(0xFF756A63),
 )
 
 @Composable
 fun SalesFunnelTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val colors = if (darkTheme) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = CozyColors, content = content)
 }

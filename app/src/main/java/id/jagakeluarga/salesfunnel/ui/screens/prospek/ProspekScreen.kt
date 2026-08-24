@@ -3,6 +3,7 @@ package id.jagakeluarga.salesfunnel.ui.screens.prospek
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Delete
@@ -25,6 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
+import id.jagakeluarga.salesfunnel.ui.common.ContactPickerDialog
+import androidx.core.content.ContextCompat
 
 @Composable
 fun ProspekScreen(
@@ -47,7 +51,9 @@ fun ProspekScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Daftar Prospek") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) { Text("+") }
+            FloatingActionButton(onClick = { showDialog = true }) {
+                Icon(Icons.Filled.Add, contentDescription = "Tambah prospek")
+            }
         },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -182,48 +188,35 @@ fun ProspekDialog(
     var telepon by remember { mutableStateOf(initial?.nomorTelepon ?: "") }
     var tahap by remember { mutableStateOf(initial?.tahap ?: TahapPipeline.PROSPEK) }
     var expanded by remember { mutableStateOf(false) }
+    var showContactPicker by remember { mutableStateOf(false) }
 
-    // Ambil nama + nomor dari Kontak HP (termasuk kontak yang juga dipakai di WhatsApp,
-    // karena WhatsApp mencocokkan nomor lewat kontak HP yang sama -- tidak ada API
-    // resmi untuk baca daftar kontak WhatsApp secara langsung dari app lain).
-    // Target picker langsung ke Phone.CONTENT_URI (bukan Contacts.CONTENT_URI) supaya
-    // URI hasil pilihan sudah berisi nomor telepon langsung -- tidak perlu query kedua
-    // yang butuh izin READ_CONTACTS terpisah.
-    val readContact = remember(context) {
-        { contactUri: Uri ->
-            context.contentResolver.query(contactUri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                    val numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                    val namaKontak = if (nameIdx >= 0) cursor.getString(nameIdx) else null
-                    val nomorKontak = if (numIdx >= 0) cursor.getString(numIdx) else null
-                    if (!namaKontak.isNullOrBlank()) Prospek(nama = namaKontak, nomorTelepon = nomorKontak)
-                    else null
-                } else null
-            }
+    val contactPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) showContactPicker = true }
+
+    fun openContactPicker() {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            showContactPicker = true
+        } else {
+            contactPermissionLauncher.launch(android.Manifest.permission.READ_CONTACTS)
         }
     }
-    val pickContactLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val data = result.data
-        val uris = buildList {
-            data?.data?.let(::add)
-            data?.clipData?.let { clips -> repeat(clips.itemCount) { add(clips.getItemAt(it).uri) } }
-        }.distinct()
-        val contacts = uris.mapNotNull(readContact)
-        if (contacts.size > 1) onImportBanyak(contacts)
-        else contacts.firstOrNull()?.let { contact -> nama = contact.nama; telepon = contact.nomorTelepon.orEmpty() }
-    }
-    val pickManyContactLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val data = result.data
-        val uris = buildList {
-            data?.data?.let(::add)
-            data?.clipData?.let { clips -> repeat(clips.itemCount) { add(clips.getItemAt(it).uri) } }
-        }.distinct()
-        onImportBanyak(uris.mapNotNull(readContact))
+
+    if (showContactPicker && initial == null) {
+        ContactPickerDialog(
+            context = context,
+            onDismiss = { showContactPicker = false },
+            onSelected = { contacts ->
+                showContactPicker = false
+                if (contacts.size == 1) {
+                    nama = contacts.first().nama
+                    telepon = contacts.first().nomorTelepon.orEmpty()
+                } else {
+                    onImportBanyak(contacts)
+                    onDismiss()
+                }
+            },
+        )
     }
 
     AlertDialog(
@@ -231,31 +224,12 @@ fun ProspekDialog(
         title = { Text(if (initial == null) "Tambah Prospek" else "Edit Prospek") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = {
-                        pickContactLauncher.launch(
-                            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Pilih satu Kontak HP")
-                }
-                OutlinedButton(
-                    onClick = {
-                        pickManyContactLauncher.launch(
-                            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI).apply {
-                                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                            }
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Import banyak kontak")
+                if (initial == null) {
+                    OutlinedButton(onClick = ::openContactPicker, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Pilih kontak (satu atau banyak)")
+                    }
                 }
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(telepon, { telepon = it }, label = { Text("No HP/WA") }, modifier = Modifier.fillMaxWidth())
