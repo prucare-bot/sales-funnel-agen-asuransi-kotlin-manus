@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
+import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekFilterDialog
 import id.jagakeluarga.salesfunnel.ui.common.ContactPickerDialog
 import androidx.core.content.ContextCompat
 
@@ -39,12 +41,18 @@ fun ProspekScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var kataKunci by remember { mutableStateOf("") }
+    var tanggalMulai by remember { mutableStateOf<Long?>(null) }
+    var tanggalAkhir by remember { mutableStateOf<Long?>(null) }
+    var tahapFilter by remember { mutableStateOf<TahapPipeline?>(null) }
+    var showFilter by remember { mutableStateOf(false) }
 
-    val hasilFilter = remember(prospekList, kataKunci) {
-        if (kataKunci.isBlank()) {
-            prospekList
-        } else {
-            prospekList.filter { it.nama.contains(kataKunci, ignoreCase = true) }
+    val hasilFilter = remember(prospekList, kataKunci, tanggalMulai, tanggalAkhir, tahapFilter) {
+        prospekList.filter { prospek ->
+            val cocokNama = kataKunci.isBlank() || prospek.nama.contains(kataKunci, ignoreCase = true)
+            val cocokMulai = tanggalMulai == null || prospek.dibuatPada >= tanggalMulai!!
+            val cocokAkhir = tanggalAkhir == null || prospek.dibuatPada <= tanggalAkhir!!
+            val cocokTahap = tahapFilter == null || prospek.tahap == tahapFilter
+            cocokNama && cocokMulai && cocokAkhir && cocokTahap
         }
     }
 
@@ -72,11 +80,19 @@ fun ProspekScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             )
+            OutlinedButton(
+                onClick = { showFilter = true },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            ) {
+                Icon(Icons.Filled.FilterList, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (tanggalMulai != null || tanggalAkhir != null || tahapFilter != null) "Filter aktif" else "Filter tanggal & status")
+            }
 
             if (hasilFilter.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        if (kataKunci.isBlank()) "Belum ada prospek" else "Tidak ditemukan \"$kataKunci\"",
+                        if (kataKunci.isBlank() && tanggalMulai == null && tanggalAkhir == null && tahapFilter == null) "Belum ada prospek" else "Tidak ada prospek yang sesuai filter",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -97,6 +113,21 @@ fun ProspekScreen(
                 }
             }
         }
+    }
+
+    if (showFilter) {
+        ProspekFilterDialog(
+            tanggalMulai = tanggalMulai,
+            tanggalAkhir = tanggalAkhir,
+            tahapAwal = tahapFilter,
+            onDismiss = { showFilter = false },
+            onApply = { mulai, akhir, tahap ->
+                tanggalMulai = mulai
+                tanggalAkhir = akhir
+                tahapFilter = tahap
+                showFilter = false
+            },
+        )
     }
 
     if (showDialog) {

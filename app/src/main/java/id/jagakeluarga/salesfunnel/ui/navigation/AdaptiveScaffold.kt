@@ -1,5 +1,11 @@
 package id.jagakeluarga.salesfunnel.ui.navigation
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -41,7 +47,16 @@ fun AdaptiveScaffold(
                     )
                 }
             }
-            Box(Modifier.padding(16.dp)) { content() }
+            Box(Modifier.padding(16.dp)) {
+                AnimatedContent(
+                    targetState = current,
+                    transitionSpec = {
+                        (fadeIn() + slideInHorizontally { it / 8 }) togetherWith
+                            (fadeOut() + slideOutHorizontally { -it / 8 })
+                    },
+                    label = "menu_transition_rail",
+                ) { content() }
+            }
         }
     } else {
         Scaffold(
@@ -59,7 +74,14 @@ fun AdaptiveScaffold(
             }
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                content()
+                AnimatedContent(
+                    targetState = current,
+                    transitionSpec = {
+                        (fadeIn() + slideInHorizontally { it / 8 }) togetherWith
+                            (fadeOut() + slideOutHorizontally { -it / 8 })
+                    },
+                    label = "menu_transition_bottom",
+                ) { content() }
             }
         }
     }
