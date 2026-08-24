@@ -91,6 +91,7 @@ fun AdaptiveScaffold(
                     },
                     label = "menu_transition_rail",
                 ) { destination -> content(destination) }
+                }
             }
         }
     } else {
