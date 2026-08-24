@@ -4,7 +4,14 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +35,7 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
     val preferences = remember { context.getSharedPreferences("sales_funnel_settings", 0) }
     var namaUser by remember { mutableStateOf(preferences.getString("nama_user", "Densus") ?: "Densus") }
     var lastBackup by remember { mutableStateOf<Long?>(null) }
+    var showBusinessCard by remember { mutableStateOf(false) }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -76,9 +84,35 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
 
     Scaffold(topBar = { TopAppBar(title = { Text("Pengaturan & Backup") }) }) { padding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize(),
+            modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text("User Settings", style = MaterialTheme.typography.headlineSmall)
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.Person, contentDescription = null) },
+                        headlineContent = { Text("My Profile") },
+                        supportingContent = { Text("Kelola identitas user aplikasi") },
+                        modifier = Modifier.clickable { status = "Bagian profil aktif." },
+                    )
+                    HorizontalDivider()
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.Contacts, contentDescription = null) },
+                        headlineContent = { Text("Business Card") },
+                        supportingContent = { Text("Lihat kartu nama digital") },
+                        modifier = Modifier.clickable { showBusinessCard = true },
+                    )
+                    HorizontalDivider()
+                    ListItem(
+                        leadingContent = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        headlineContent = { Text("Change user name") },
+                        supportingContent = { Text("Nama yang tampil di dashboard") },
+                        modifier = Modifier.clickable { status = "Silakan ubah nama pada kolom Profil User." },
+                    )
+                }
+            }
+
             Text("Profil User", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = namaUser,
@@ -181,5 +215,20 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
 
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
+    }
+
+    if (showBusinessCard) {
+        AlertDialog(
+            onDismissRequest = { showBusinessCard = false },
+            title = { Text("Business Card") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(namaUser, style = MaterialTheme.typography.headlineSmall)
+                    Text("Sales Funnel Agen Asuransi", style = MaterialTheme.typography.bodyLarge)
+                    Text("Hubungi saya untuk diskusi kebutuhan perlindungan.", style = MaterialTheme.typography.bodyMedium)
+                }
+            },
+            confirmButton = { TextButton(onClick = { showBusinessCard = false }) { Text("Tutup") } },
+        )
     }
 }

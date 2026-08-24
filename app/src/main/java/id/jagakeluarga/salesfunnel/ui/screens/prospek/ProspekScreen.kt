@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekFilterDialog
 import id.jagakeluarga.salesfunnel.ui.common.ContactPickerDialog
 import androidx.core.content.ContextCompat
+import id.jagakeluarga.salesfunnel.whatsapp.WhatsAppHelper
 
 @Composable
 fun ProspekScreen(
@@ -188,6 +190,18 @@ private fun SwipeableProspekItem(
         ListItem(
             headlineContent = { Text(prospek.nama) },
             supportingContent = { Text("${prospek.tahap.label} · No HP/WA: ${prospek.nomorTelepon ?: "-"}") },
+            trailingContent = {
+                IconButton(
+                    enabled = !prospek.nomorTelepon.isNullOrBlank(),
+                    onClick = {
+                        WhatsAppHelper.openChat(
+                            context,
+                            prospek.nomorTelepon,
+                            "Halo ${prospek.nama}, saya ingin melanjutkan komunikasi terkait kebutuhan perlindungan Anda. Kapan waktu yang nyaman untuk berdiskusi?",
+                        )
+                    },
+                ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
+            },
             modifier = Modifier.clickable(onClick = onKlik),
         )
     }

@@ -9,14 +9,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
+import id.jagakeluarga.salesfunnel.whatsapp.WhatsAppHelper
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,6 +32,7 @@ fun AgendaScreen(
 ) {
     var dialogAgenda by remember { mutableStateOf<Agenda?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
 
     Scaffold(
@@ -52,6 +56,17 @@ fun AgendaScreen(
                     supportingContent = { Text("$namaProspek · ${agenda.jenis.label} · ${fmt.format(Date(agenda.waktuMulai))}") },
                     trailingContent = {
                         Row {
+                            IconButton(
+                                enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
+                                onClick = {
+                                    val prospek = prospekList.find { it.id == agenda.prospekId }
+                                    WhatsAppHelper.openChat(
+                                        context = context,
+                                        phone = prospek?.nomorTelepon,
+                                        message = "Halo ${prospek?.nama.orEmpty()}, mengingatkan agenda ${agenda.judul} pada ${fmt.format(Date(agenda.waktuMulai))}. Sampai bertemu.",
+                                    )
+                                },
+                            ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
                             IconButton(onClick = {
                                 dialogAgenda = agenda
                                 showDialog = true

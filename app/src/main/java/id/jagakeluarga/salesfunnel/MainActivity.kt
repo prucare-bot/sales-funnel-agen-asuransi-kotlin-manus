@@ -74,8 +74,8 @@ class MainActivity : ComponentActivity() {
                         windowSizeClass = windowSizeClass,
                         current = current,
                         onNavigate = { current = it },
-                    ) {
-                        when (current) {
+                    ) { destination ->
+                        when (destination) {
                             Destination.BERANDA -> BerandaScreen(
                                 prospekList = prospekList,
                                 agendaList = agendaList,
