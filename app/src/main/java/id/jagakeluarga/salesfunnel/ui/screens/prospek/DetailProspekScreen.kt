@@ -101,7 +101,7 @@ fun DetailProspekScreen(
                     ) {
                         Icon(Icons.Filled.Phone, contentDescription = null, tint = warna)
                         Spacer(Modifier.width(8.dp))
-                        Text(prospek.nomorTelepon, style = MaterialTheme.typography.bodyLarge)
+                        Text("No HP/WA: ${prospek.nomorTelepon}", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
@@ -161,9 +161,10 @@ fun DetailProspekScreen(
 
     if (showTambahAgenda) {
         TambahFollowUpDialog(
+            prospekId = prospek.id,
             onDismiss = { showTambahAgenda = false },
             onSimpan = {
-                onSimpanAgenda(Agenda(prospekId = prospek.id, judul = it.first, jenis = it.second, waktuMulai = it.third))
+                onSimpanAgenda(it)
                 showTambahAgenda = false
             },
         )
@@ -172,13 +173,16 @@ fun DetailProspekScreen(
 
 @Composable
 private fun TambahFollowUpDialog(
+    prospekId: String,
     onDismiss: () -> Unit,
-    onSimpan: (Triple<String, JenisAgenda, Long>) -> Unit,
+    onSimpan: (Agenda) -> Unit,
 ) {
     var judul by remember { mutableStateOf("") }
     var jenis by remember { mutableStateOf(JenisAgenda.LAINNYA) }
     var waktuMulai by remember { mutableStateOf(System.currentTimeMillis() + 24 * 60 * 60 * 1000) }
+    var reminderOffsetHours by remember { mutableStateOf(24) }
     var expanded by remember { mutableStateOf(false) }
+    var expandedReminder by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -201,12 +205,33 @@ private fun TambahFollowUpDialog(
                     selectedMillis = waktuMulai,
                     onSelectedMillisChange = { waktuMulai = it },
                 )
+                ExposedDropdownMenuBox(expanded = expandedReminder, onExpandedChange = { expandedReminder = it }) {
+                    OutlinedTextField(
+                        value = if (reminderOffsetHours == 24) "1 hari sebelum janji" else "4 jam sebelum janji",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Pengingat") },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(expanded = expandedReminder, onDismissRequest = { expandedReminder = false }) {
+                        DropdownMenuItem(text = { Text("1 hari sebelum janji") }, onClick = { reminderOffsetHours = 24; expandedReminder = false })
+                        DropdownMenuItem(text = { Text("4 jam sebelum janji") }, onClick = { reminderOffsetHours = 4; expandedReminder = false })
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 if (judul.isNotBlank()) {
-                    onSimpan(Triple(judul.trim(), jenis, waktuMulai))
+                    onSimpan(
+                        Agenda(
+                            prospekId = prospekId,
+                            judul = judul.trim(),
+                            jenis = jenis,
+                            waktuMulai = waktuMulai,
+                            reminderOffsetHours = reminderOffsetHours,
+                        )
+                    )
                 }
             }) { Text("Simpan") }
         },

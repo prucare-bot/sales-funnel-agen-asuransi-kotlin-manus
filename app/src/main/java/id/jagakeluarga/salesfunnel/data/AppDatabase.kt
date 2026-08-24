@@ -2,6 +2,8 @@ package id.jagakeluarga.salesfunnel.data
 
 import android.content.Context
 import androidx.room.Database
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -14,7 +16,7 @@ import id.jagakeluarga.salesfunnel.data.entity.Prospek
 
 @Database(
     entities = [Prospek::class, Agenda::class, Nasabah::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -24,6 +26,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun nasabahDao(): NasabahDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE agenda ADD COLUMN reminderOffsetHours INTEGER NOT NULL DEFAULT 24")
+            }
+        }
+
         @Volatile private var instance: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase =
@@ -32,7 +40,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "sales_funnel.db",
-                ).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2).build().also { instance = it }
             }
     }
 }

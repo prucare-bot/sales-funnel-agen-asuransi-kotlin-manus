@@ -16,7 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun SettingsScreen(dbFilePath: String) {
+fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {}) {
     val context = LocalContext.current
     val manager = remember { GoogleDriveBackupManager(context) }
     val scope = rememberCoroutineScope()
@@ -24,6 +24,8 @@ fun SettingsScreen(dbFilePath: String) {
     var account by remember { mutableStateOf(manager.currentAccount()) }
     var status by remember { mutableStateOf<String?>(null) }
     var isBusy by remember { mutableStateOf(false) }
+    val preferences = remember { context.getSharedPreferences("sales_funnel_settings", 0) }
+    var namaUser by remember { mutableStateOf(preferences.getString("nama_user", "Densus") ?: "Densus") }
     var lastBackup by remember { mutableStateOf<Long?>(null) }
 
     val signInLauncher = rememberLauncherForActivityResult(
@@ -45,6 +47,24 @@ fun SettingsScreen(dbFilePath: String) {
             modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text("Profil User", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = namaUser,
+                onValueChange = { namaUser = it },
+                label = { Text("Nama user") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                enabled = namaUser.isNotBlank(),
+                onClick = {
+                    val nama = namaUser.trim()
+                    preferences.edit().putString("nama_user", nama).apply()
+                    onNamaUserChanged(nama)
+                    status = "Nama user berhasil disimpan."
+                },
+            ) { Text("Simpan nama user") }
+
             Text("Backup ke Google Drive", style = MaterialTheme.typography.titleMedium)
             Text(
                 "Data (Pipeline, Prospek, Agenda, Nasabah) tersimpan di HP. " +

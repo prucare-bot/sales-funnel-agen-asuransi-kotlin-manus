@@ -98,6 +98,7 @@ fun ProspekScreen(
             initial = null,
             onDismiss = { showDialog = false },
             onSimpan = { onSimpan(it); showDialog = false },
+            onImportBanyak = { kontak -> kontak.forEach(onSimpan) },
         )
     }
 }
@@ -149,7 +150,7 @@ private fun SwipeableProspekItem(
     ) {
         ListItem(
             headlineContent = { Text(prospek.nama) },
-            supportingContent = { Text("${prospek.tahap.label} · ${prospek.nomorTelepon ?: "-"}") },
+            supportingContent = { Text("${prospek.tahap.label} · No HP/WA: ${prospek.nomorTelepon ?: "-"}") },
             modifier = Modifier.clickable(onClick = onKlik),
         )
     }
@@ -174,6 +175,7 @@ fun ProspekDialog(
     initial: Prospek?,
     onDismiss: () -> Unit,
     onSimpan: (Prospek) -> Unit,
+    onImportBanyak: (List<Prospek>) -> Unit = {},
 ) {
     val context = LocalContext.current
     var nama by remember { mutableStateOf(initial?.nama ?: "") }
@@ -187,20 +189,41 @@ fun ProspekDialog(
     // Target picker langsung ke Phone.CONTENT_URI (bukan Contacts.CONTENT_URI) supaya
     // URI hasil pilihan sudah berisi nomor telepon langsung -- tidak perlu query kedua
     // yang butuh izin READ_CONTACTS terpisah.
-    val pickContactLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val contactUri = result.data?.data
-        if (contactUri != null) {
+    val readContact = remember(context) {
+        { contactUri: Uri ->
             context.contentResolver.query(contactUri, null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                    if (nameIdx >= 0) cursor.getString(nameIdx)?.let { nama = it }
                     val numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                    if (numIdx >= 0) cursor.getString(numIdx)?.let { telepon = it }
-                }
+                    val namaKontak = if (nameIdx >= 0) cursor.getString(nameIdx) else null
+                    val nomorKontak = if (numIdx >= 0) cursor.getString(numIdx) else null
+                    if (!namaKontak.isNullOrBlank()) Prospek(nama = namaKontak, nomorTelepon = nomorKontak)
+                    else null
+                } else null
             }
         }
+    }
+    val pickContactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val data = result.data
+        val uris = buildList {
+            data?.data?.let(::add)
+            data?.clipData?.let { clips -> repeat(clips.itemCount) { add(clips.getItemAt(it).uri) } }
+        }.distinct()
+        val contacts = uris.mapNotNull(readContact)
+        if (contacts.size > 1) onImportBanyak(contacts)
+        else contacts.firstOrNull()?.let { contact -> nama = contact.nama; telepon = contact.nomorTelepon.orEmpty() }
+    }
+    val pickManyContactLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val data = result.data
+        val uris = buildList {
+            data?.data?.let(::add)
+            data?.clipData?.let { clips -> repeat(clips.itemCount) { add(clips.getItemAt(it).uri) } }
+        }.distinct()
+        onImportBanyak(uris.mapNotNull(readContact))
     }
 
     AlertDialog(
@@ -218,10 +241,24 @@ fun ProspekDialog(
                 ) {
                     Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Pilih dari Kontak HP")
+                    Text("Pilih satu Kontak HP")
+                }
+                OutlinedButton(
+                    onClick = {
+                        pickManyContactLauncher.launch(
+                            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI).apply {
+                                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Import banyak kontak")
                 }
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(telepon, { telepon = it }, label = { Text("No. Telepon") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(telepon, { telepon = it }, label = { Text("No HP/WA") }, modifier = Modifier.fillMaxWidth())
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
                         value = tahap.label,

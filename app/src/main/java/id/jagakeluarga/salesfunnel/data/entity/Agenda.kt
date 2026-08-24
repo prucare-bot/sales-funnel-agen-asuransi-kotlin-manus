@@ -32,6 +32,8 @@ data class Agenda(
     val jenis: JenisAgenda = JenisAgenda.LAINNYA,
     val waktuMulai: Long,
     val selesai: Boolean = false,
+    /** Jeda pengingat sebelum janji dalam jam; pilihan UI: 24 atau 4. */
+    val reminderOffsetHours: Int = 24,
     val catatan: String? = null,
     val dibuatPada: Long = System.currentTimeMillis(),
 )

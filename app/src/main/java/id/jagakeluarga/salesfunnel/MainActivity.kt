@@ -38,6 +38,9 @@ class MainActivity : ComponentActivity() {
             val windowSizeClass = calculateWindowSizeClass(this)
             var current by remember { mutableStateOf(Destination.BERANDA) }
             var selectedProspekId by remember { mutableStateOf<String?>(null) }
+            var namaAgen by remember {
+                mutableStateOf(getSharedPreferences("sales_funnel_settings", MODE_PRIVATE).getString("nama_user", "Densus") ?: "Densus")
+            }
 
             val notificationPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
@@ -76,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             Destination.BERANDA -> BerandaScreen(
                                 prospekList = prospekList,
                                 agendaList = agendaList,
+                                namaAgen = namaAgen,
                             )
                             Destination.PIPELINE -> PipelineScreen(
                                 windowSizeClass = windowSizeClass,
@@ -102,6 +106,7 @@ class MainActivity : ComponentActivity() {
                             )
                             Destination.SETTINGS -> SettingsScreen(
                                 dbFilePath = getDatabasePath("sales_funnel.db").absolutePath,
+                                onNamaUserChanged = { namaAgen = it },
                             )
                         }
                     }

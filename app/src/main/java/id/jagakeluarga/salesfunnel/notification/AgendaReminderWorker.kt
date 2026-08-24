@@ -16,12 +16,15 @@ class AgendaReminderWorker(
     companion object {
         const val KEY_JUDUL = "judul"
         const val KEY_JENIS = "jenis"
+        const val KEY_OFFSET_HOURS = "offset_hours"
         const val CHANNEL_ID = "agenda_reminders"
     }
 
     override suspend fun doWork(): Result {
         val judul = inputData.getString(KEY_JUDUL) ?: "Agenda"
         val jenis = inputData.getString(KEY_JENIS).orEmpty()
+        val offsetHours = inputData.getInt(KEY_OFFSET_HOURS, 24)
+        val offsetLabel = if (offsetHours == 24) "1 hari sebelum janji" else "4 jam sebelum janji"
 
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -34,7 +37,7 @@ class AgendaReminderWorker(
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(judul)
-            .setContentText(jenis)
+            .setContentText("$jenis · $offsetLabel")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()

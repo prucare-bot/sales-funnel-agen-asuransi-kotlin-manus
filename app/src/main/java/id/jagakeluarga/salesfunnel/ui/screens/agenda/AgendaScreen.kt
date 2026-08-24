@@ -103,6 +103,8 @@ private fun AgendaDialog(
     var waktuMulai by remember(agendaAwal) {
         mutableStateOf(agendaAwal?.waktuMulai ?: (System.currentTimeMillis() + 24 * 60 * 60 * 1000))
     }
+    var reminderOffsetHours by remember(agendaAwal) { mutableStateOf(agendaAwal?.reminderOffsetHours ?: 24) }
+    var expandedReminder by remember { mutableStateOf(false) }
     var pencarianProspek by remember { mutableStateOf("") }
     var expandedProspek by remember { mutableStateOf(false) }
     var expandedJenis by remember { mutableStateOf(false) }
@@ -175,6 +177,31 @@ private fun AgendaDialog(
                     onSelectedMillisChange = { waktuMulai = it },
                 )
                 ExposedDropdownMenuBox(
+                    expanded = expandedReminder,
+                    onExpandedChange = { expandedReminder = it },
+                ) {
+                    OutlinedTextField(
+                        value = if (reminderOffsetHours == 24) "1 hari sebelum janji" else "4 jam sebelum janji",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Pengingat") },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedReminder,
+                        onDismissRequest = { expandedReminder = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("1 hari sebelum janji") },
+                            onClick = { reminderOffsetHours = 24; expandedReminder = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("4 jam sebelum janji") },
+                            onClick = { reminderOffsetHours = 4; expandedReminder = false },
+                        )
+                    }
+                }
+                ExposedDropdownMenuBox(
                     expanded = expandedJenis,
                     onExpandedChange = { expandedJenis = it },
                 ) {
@@ -207,11 +234,13 @@ private fun AgendaDialog(
                         judul = judul.trim(),
                         jenis = jenis,
                         waktuMulai = waktuMulai,
+                        reminderOffsetHours = reminderOffsetHours,
                     ) ?: Agenda(
                         prospekId = prospek.id,
                         judul = judul.trim(),
                         jenis = jenis,
                         waktuMulai = waktuMulai,
+                        reminderOffsetHours = reminderOffsetHours,
                     )
                     onSimpan(agenda)
                 }

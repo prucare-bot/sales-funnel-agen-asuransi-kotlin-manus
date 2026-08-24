@@ -44,6 +44,7 @@ fun BerandaScreen(
 
     val grouped = TahapPipeline.entries.associateWith { tahap -> prospekList.count { it.tahap == tahap } }
     val maxJumlah = (grouped.values.maxOrNull() ?: 0).coerceAtLeast(1)
+    val totalProspek = prospekList.size.coerceAtLeast(1)
     val closingBulanIni = prospekList.count { prospek ->
         prospek.tahap == TahapPipeline.CLOSING && isBulanSama(prospek.diperbaruiPada, System.currentTimeMillis())
     }
@@ -67,11 +68,17 @@ fun BerandaScreen(
             }
 
             Column {
-                Text("Corong Pipeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Dashboard Statistik Prospek", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 TahapPipeline.entries.forEach { tahap ->
                     val jumlah = grouped[tahap] ?: 0
-                    FunnelBar(label = tahap.label, jumlah = jumlah, maxJumlah = maxJumlah, warna = warnaTahap(tahap))
+                    FunnelBar(
+                        label = tahap.label,
+                        jumlah = jumlah,
+                        persentase = jumlah * 100 / totalProspek,
+                        maxJumlah = maxJumlah,
+                        warna = warnaTahap(tahap),
+                    )
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -120,12 +127,12 @@ private fun RingkasanCard(modifier: Modifier = Modifier, angka: String, label: S
 }
 
 @Composable
-private fun FunnelBar(label: String, jumlah: Int, maxJumlah: Int, warna: Color) {
+private fun FunnelBar(label: String, jumlah: Int, persentase: Int, maxJumlah: Int, warna: Color) {
     val fraksi = (jumlah.toFloat() / maxJumlah.toFloat()).coerceIn(0.04f, 1f)
     Column {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(label, style = MaterialTheme.typography.bodyMedium)
-            Text("$jumlah", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            Text("$jumlah ($persentase%)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(4.dp))
         Box(

@@ -13,7 +13,8 @@ object AgendaScheduler {
 
     /** Menjadwalkan (atau menjadwal ulang) notifikasi untuk satu agenda. */
     fun schedule(context: Context, agenda: Agenda) {
-        val delay = agenda.waktuMulai - System.currentTimeMillis()
+        val reminderMillis = agenda.reminderOffsetHours.toLong() * 60 * 60 * 1000
+        val delay = agenda.waktuMulai - reminderMillis - System.currentTimeMillis()
         if (agenda.selesai || delay <= 0) {
             cancel(context, agenda.id)
             return
@@ -21,6 +22,7 @@ object AgendaScheduler {
         val data = workDataOf(
             AgendaReminderWorker.KEY_JUDUL to agenda.judul,
             AgendaReminderWorker.KEY_JENIS to agenda.jenis.label,
+            AgendaReminderWorker.KEY_OFFSET_HOURS to agenda.reminderOffsetHours,
         )
         val request = OneTimeWorkRequestBuilder<AgendaReminderWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
