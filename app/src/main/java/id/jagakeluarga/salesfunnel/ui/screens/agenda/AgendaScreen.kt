@@ -123,7 +123,7 @@ private fun AgendaDialog(
         )
     }
 
-    AlertDialog(
+    if (!showProspekPicker) AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (agendaAwal == null) "Tambah Agenda" else "Edit Agenda") },
         text = {
@@ -135,14 +135,21 @@ private fun AgendaDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = prospek.nama,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Prospek") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth().clickable { showProspekPicker = true },
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = prospek.nama,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Prospek") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { showProspekPicker = true },
+                    )
+                }
                 DateTimePickerField(
                     selectedMillis = waktuMulai,
                     onSelectedMillisChange = { waktuMulai = it },
@@ -217,13 +224,13 @@ private fun AgendaDialog(
                 }
             }) { Text("Simpan") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
+                dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
     )
 }
 
-
 @Composable
 private fun ProspekPickerDialog(
+
     prospekList: List<Prospek>,
     selectedProspekId: String,
     onDismiss: () -> Unit,

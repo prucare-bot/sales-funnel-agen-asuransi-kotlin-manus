@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
+import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,6 +28,37 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
     val preferences = remember { context.getSharedPreferences("sales_funnel_settings", 0) }
     var namaUser by remember { mutableStateOf(preferences.getString("nama_user", "Densus") ?: "Densus") }
     var lastBackup by remember { mutableStateOf<Long?>(null) }
+
+    val localBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri != null) {
+            isBusy = true
+            scope.launch {
+                try {
+                    LocalBackupManager.exportDatabase(context.contentResolver, java.io.File(dbFilePath), uri)
+                    status = "Backup lokal berhasil disimpan."
+                } catch (e: Exception) {
+                    status = "Backup lokal gagal: ${e.message}"
+                } finally { isBusy = false }
+            }
+        }
+    }
+    val localRestoreLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            isBusy = true
+            scope.launch {
+                try {
+                    LocalBackupManager.importDatabase(context.contentResolver, uri, java.io.File(dbFilePath))
+                    status = "Restore lokal berhasil. Tutup paksa lalu buka kembali aplikasi agar data dimuat."
+                } catch (e: Exception) {
+                    status = "Restore lokal gagal: ${e.message}"
+                } finally { isBusy = false }
+            }
+        }
+    }
 
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -64,6 +96,22 @@ fun SettingsScreen(dbFilePath: String, onNamaUserChanged: (String) -> Unit = {})
                     status = "Nama user berhasil disimpan."
                 },
             ) { Text("Simpan nama user") }
+
+            Text("Backup lokal", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Simpan file backup ke memori HP, kartu SD, atau folder cloud yang dipilih melalui pemilih file Android.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = !isBusy,
+                    onClick = { localBackupLauncher.launch("sales_funnel_backup.db") },
+                ) { Text("Simpan ke perangkat") }
+                OutlinedButton(
+                    enabled = !isBusy,
+                    onClick = { localRestoreLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*")) },
+                ) { Text("Pulihkan file") }
+            }
 
             Text("Backup ke Google Drive", style = MaterialTheme.typography.titleMedium)
             Text(
