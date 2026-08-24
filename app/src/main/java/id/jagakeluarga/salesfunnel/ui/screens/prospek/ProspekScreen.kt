@@ -280,6 +280,7 @@ fun ProspekDialog(
     val context = LocalContext.current
     var nama by remember { mutableStateOf(initial?.nama ?: "") }
     var telepon by remember { mutableStateOf(initial?.nomorTelepon ?: "") }
+    var estimasiPremi by remember(initial?.id) { mutableStateOf(initial?.estimasiPremi?.toString().orEmpty()) }
     var tahap by remember { mutableStateOf(initial?.tahap ?: TahapPipeline.PROSPEK) }
     var expanded by remember { mutableStateOf(false) }
     var showContactPicker by remember { mutableStateOf(false) }
@@ -327,6 +328,13 @@ fun ProspekDialog(
                 }
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(telepon, { telepon = it }, label = { Text("No HP/WA") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = estimasiPremi,
+                    onValueChange = { estimasiPremi = it.filter(Char::isDigit) },
+                    label = { Text("Estimasi premi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
                         value = tahap.label,
@@ -350,6 +358,7 @@ fun ProspekDialog(
                         (initial ?: Prospek(nama = nama)).copy(
                             nama = nama,
                             nomorTelepon = telepon.ifBlank { null },
+                            estimasiPremi = estimasiPremi.toLongOrNull(),
                             tahap = tahap,
                             diperbaruiPada = System.currentTimeMillis(),
                         )

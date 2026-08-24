@@ -48,6 +48,8 @@ class MainActivity : ComponentActivity() {
             var namaAgen by remember {
                 mutableStateOf(settings.getString("nama_user", "Densus") ?: "Densus")
             }
+            var targetClosing by remember { mutableStateOf(settings.getInt("target_closing", 10)) }
+            var targetPremi by remember { mutableStateOf(settings.getLong("target_premi", 0L)) }
             var tema by remember {
                 mutableStateOf(
                     runCatching { AppThemeColor.valueOf(settings.getString("theme_color", AppThemeColor.HIJAU.name) ?: AppThemeColor.HIJAU.name) }
@@ -108,6 +110,8 @@ class MainActivity : ComponentActivity() {
                                 prospekList = prospekList,
                                 agendaList = agendaList,
                                 namaAgen = namaAgen,
+                                targetClosing = targetClosing,
+                                targetPremi = targetPremi,
                                 onHomeClick = { current = Destination.BERANDA },
                                 onBukaAgenda = { current = Destination.AGENDA },
                                 onTandaiAgendaSelesai = { agenda -> viewModel.saveAgenda(agenda.copy(selesai = true)) },
@@ -145,6 +149,19 @@ class MainActivity : ComponentActivity() {
                                 onThemeChanged = {
                                     tema = it
                                     settings.edit().putString("theme_color", it.name).apply()
+                                },
+                                prospekList = prospekList,
+                                agendaList = agendaList,
+                                nasabahList = nasabahList,
+                                targetClosing = targetClosing,
+                                targetPremi = targetPremi,
+                                onTargetChanged = { closing, premi ->
+                                    targetClosing = closing
+                                    targetPremi = premi
+                                    settings.edit()
+                                        .putInt("target_closing", closing)
+                                        .putLong("target_premi", premi)
+                                        .apply()
                                 },
                             )
                         }

@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
+import id.jagakeluarga.salesfunnel.data.entity.Agenda
+import id.jagakeluarga.salesfunnel.data.entity.Nasabah
+import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import kotlinx.coroutines.launch
@@ -30,6 +33,12 @@ fun SettingsScreen(
     onNamaUserChanged: (String) -> Unit = {},
     selectedTheme: AppThemeColor = AppThemeColor.HIJAU,
     onThemeChanged: (AppThemeColor) -> Unit = {},
+    prospekList: List<Prospek> = emptyList(),
+    agendaList: List<Agenda> = emptyList(),
+    nasabahList: List<Nasabah> = emptyList(),
+    targetClosing: Int = 10,
+    targetPremi: Long = 0L,
+    onTargetChanged: (Int, Long) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val manager = remember { GoogleDriveBackupManager(context) }
@@ -42,6 +51,8 @@ fun SettingsScreen(
     var namaUser by remember { mutableStateOf(preferences.getString("nama_user", "Densus") ?: "Densus") }
     var lastBackup by remember { mutableStateOf<Long?>(null) }
     var showBusinessCard by remember { mutableStateOf(false) }
+    var targetClosingInput by remember { mutableStateOf(targetClosing.toString()) }
+    var targetPremiInput by remember { mutableStateOf(targetPremi.toString()) }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -69,6 +80,37 @@ fun SettingsScreen(
                     status = "Restore lokal berhasil. Tutup paksa lalu buka kembali aplikasi agar data dimuat."
                 } catch (e: Exception) {
                     status = "Restore lokal gagal: ${e.message}"
+                } finally { isBusy = false }
+            }
+        }
+    }
+
+    val reportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri != null) {
+            isBusy = true
+            scope.launch {
+                try {
+                    val fmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                    val csv = buildString {
+                        appendLine("Jenis,Judul/Nama,Tahap atau Jenis,Tanggal,Status")
+                        prospekList.forEach { prospek ->
+                            appendLine(listOf("Prospek", prospek.nama, prospek.tahap.label, fmt.format(Date(prospek.dibuatPada)), "Aktif").toCsvLine())
+                        }
+                        agendaList.forEach { agenda ->
+                            appendLine(listOf("Agenda", agenda.judul, agenda.jenis.label, fmt.format(Date(agenda.waktuMulai)), if (agenda.selesai) "Selesai" else "Belum selesai").toCsvLine())
+                        }
+                        nasabahList.forEach { nasabah ->
+                            appendLine(listOf("Nasabah", nasabah.nama, nasabah.produk, "", "Aktif").toCsvLine())
+                        }
+                    }
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(csv.toByteArray())
+                    }
+                    status = "Laporan berhasil diekspor."
+                } catch (e: Exception) {
+                    status = "Ekspor laporan gagal: ${e.message}"
                 } finally { isBusy = false }
             }
         }
@@ -149,6 +191,38 @@ fun SettingsScreen(
                     status = "Nama user berhasil disimpan."
                 },
             ) { Text("Simpan nama user") }
+
+            Text("Target Penjualan", style = MaterialTheme.typography.titleMedium)
+            Text("Tetapkan target closing dan estimasi premi untuk memantau pencapaian di Beranda.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = targetClosingInput,
+                onValueChange = { targetClosingInput = it.filter(Char::isDigit) },
+                label = { Text("Target closing per bulan") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = targetPremiInput,
+                onValueChange = { targetPremiInput = it.filter(Char::isDigit) },
+                label = { Text("Target estimasi premi per bulan") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                enabled = targetClosingInput.isNotBlank() && targetPremiInput.isNotBlank(),
+                onClick = {
+                    val closing = targetClosingInput.toIntOrNull()?.coerceAtLeast(0) ?: 0
+                    val premi = targetPremiInput.toLongOrNull()?.coerceAtLeast(0L) ?: 0L
+                    onTargetChanged(closing, premi)
+                    status = "Target penjualan berhasil disimpan."
+                },
+            ) { Text("Simpan target") }
+
+            Text("Laporan", style = MaterialTheme.typography.titleMedium)
+            Text("Ekspor daftar prospek, agenda, dan nasabah ke CSV yang dapat dibuka di Excel.", style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(enabled = !isBusy, onClick = { reportLauncher.launch("sales_funnel_laporan.csv") }) {
+                Text("Ekspor laporan CSV")
+            }
 
             Text("Backup lokal", style = MaterialTheme.typography.titleMedium)
             Text(
@@ -250,4 +324,8 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { showBusinessCard = false }) { Text("Tutup") } },
         )
     }
+}
+
+private fun List<String>.toCsvLine(): String = joinToString(",") { value ->
+    "\"${value.replace("\"", "\"\"")}\""
 }

@@ -33,6 +33,8 @@ fun BerandaScreen(
     prospekList: List<Prospek>,
     agendaList: List<Agenda>,
     namaAgen: String = "Densus",
+    targetClosing: Int = 10,
+    targetPremi: Long = 0L,
     onHomeClick: () -> Unit = {},
     onBukaAgenda: () -> Unit = {},
     onTandaiAgendaSelesai: (Agenda) -> Unit = {},
@@ -75,6 +77,9 @@ fun BerandaScreen(
     val closingBulanIni = prospekList.count { prospek ->
         prospek.tahap == TahapPipeline.CLOSING && isBulanSama(prospek.diperbaruiPada, System.currentTimeMillis())
     }
+    val premiClosingBulanIni = prospekList
+        .filter { it.tahap == TahapPipeline.CLOSING && isBulanSama(it.diperbaruiPada, System.currentTimeMillis()) }
+        .sumOf { it.estimasiPremi ?: 0L }
     val totalProspekAktif = prospekInsight.count { it.tahap != TahapPipeline.CLOSING }
 
     Scaffold { padding ->
@@ -118,6 +123,13 @@ fun BerandaScreen(
                 agendaBerikutnya = agendaBerikutnya,
                 onBukaAgenda = onBukaAgenda,
                 onTandaiAgendaSelesai = onTandaiAgendaSelesai,
+            )
+
+            TargetProgressCard(
+                closingAktual = closingBulanIni,
+                targetClosing = targetClosing,
+                premiAktual = premiClosingBulanIni,
+                targetPremi = targetPremi,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -195,6 +207,26 @@ fun BerandaScreen(
             },
             confirmButton = { TextButton(onClick = { showQuickSearch = false; quickSearchQuery = "" }) { Text("Tutup") } },
         )
+    }
+}
+
+@Composable
+private fun TargetProgressCard(
+    closingAktual: Int,
+    targetClosing: Int,
+    premiAktual: Long,
+    targetPremi: Long,
+) {
+    val closingProgress = if (targetClosing > 0) (closingAktual.toFloat() / targetClosing).coerceIn(0f, 1f) else 0f
+    val premiProgress = if (targetPremi > 0) (premiAktual.toFloat() / targetPremi).coerceIn(0f, 1f) else 0f
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Pencapaian Bulan Ini", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Closing: $closingAktual / $targetClosing")
+            LinearProgressIndicator(progress = { closingProgress }, modifier = Modifier.fillMaxWidth())
+            Text("Estimasi premi: Rp ${"%,d".format(premiAktual).replace(',', '.')} / Rp ${"%,d".format(targetPremi).replace(',', '.')}")
+            LinearProgressIndicator(progress = { premiProgress }, modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 

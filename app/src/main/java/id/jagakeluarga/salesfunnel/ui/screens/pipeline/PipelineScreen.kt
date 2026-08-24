@@ -16,6 +16,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -81,7 +82,11 @@ fun PipelineScreen(
                         )
                     }
                 }
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.Top,
+                ) { page ->
                     val tahap = tahapList[page]
                     val items = grouped[tahap].orEmpty()
                     if (items.isEmpty()) {
@@ -94,6 +99,7 @@ fun PipelineScreen(
                         }
                     } else {
                         LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
