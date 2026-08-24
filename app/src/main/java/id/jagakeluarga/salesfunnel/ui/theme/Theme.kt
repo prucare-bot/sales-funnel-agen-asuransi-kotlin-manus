@@ -5,31 +5,31 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val CozyTerracotta = Color(0xFFC9785C)
-private val CozyTerracottaDark = Color(0xFFA95742)
-private val CozyCream = Color(0xFFFFFBF5)
-private val CozySurface = Color(0xFFFFFEFC)
-private val CozyPeach = Color(0xFFFFE6D8)
-private val CozySage = Color(0xFFDDE9D6)
-private val CozyInk = Color(0xFF4A403B)
+private val TealPrimary = Color(0xFF00695C)
+private val TealDark = Color(0xFF004D40)
+private val TealSoft = Color(0xFFD9EEEA)
+private val TealPale = Color(0xFFEAF6F3)
+private val TealAccent = Color(0xFF2A9D8F)
+private val WarmWhite = Color(0xFFFFFEFC)
+private val Ink = Color(0xFF173B36)
 
 private val CozyColors = lightColorScheme(
-    primary = CozyTerracotta,
+    primary = TealPrimary,
     onPrimary = Color.White,
-    primaryContainer = CozyPeach,
-    onPrimaryContainer = CozyTerracottaDark,
-    secondary = Color(0xFF8FAF86),
+    primaryContainer = TealSoft,
+    onPrimaryContainer = TealDark,
+    secondary = TealAccent,
     onSecondary = Color.White,
-    secondaryContainer = CozySage,
-    onSecondaryContainer = Color(0xFF30422C),
-    tertiary = Color(0xFFD7A957),
+    secondaryContainer = TealPale,
+    onSecondaryContainer = TealDark,
+    tertiary = Color(0xFFB4874A),
     onTertiary = Color.White,
-    background = CozyCream,
-    onBackground = CozyInk,
-    surface = CozySurface,
-    onSurface = CozyInk,
-    surfaceVariant = Color(0xFFF4EDE5),
-    onSurfaceVariant = Color(0xFF756A63),
+    background = TealPale,
+    onBackground = Ink,
+    surface = WarmWhite,
+    onSurface = Ink,
+    surfaceVariant = Color(0xFFE3F0EE),
+    onSurfaceVariant = Color(0xFF52706A),
 )
 
 @Composable

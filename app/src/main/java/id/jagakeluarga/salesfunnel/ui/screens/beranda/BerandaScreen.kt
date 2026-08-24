@@ -8,6 +8,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,8 +32,11 @@ fun BerandaScreen(
     prospekList: List<Prospek>,
     agendaList: List<Agenda>,
     namaAgen: String = "Densus",
+    onHomeClick: () -> Unit = {},
 ) {
     var periodeTerpilih by remember { mutableStateOf(InsightPeriod.LIFETIME) }
+    var showQuickSearch by remember { mutableStateOf(false) }
+    var quickSearchQuery by remember { mutableStateOf("") }
     var periodeMenuTerbuka by remember { mutableStateOf(false) }
     val sekarang = System.currentTimeMillis()
     val awalInsight = periodeTerpilih.startMillis(sekarang)
@@ -63,7 +69,32 @@ fun BerandaScreen(
     }
     val totalProspekAktif = prospekInsight.count { it.tahap != TahapPipeline.CLOSING }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Beranda") }) }) { padding ->
+    val tanggalHariIni = remember { SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID")).format(Date()) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(tanggalHariIni, color = MaterialTheme.colorScheme.onPrimary)
+                        Text("Beranda · $namaAgen", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showQuickSearch = true }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Pencarian cepat")
+                    }
+                    IconButton(onClick = onHomeClick) {
+                        Icon(Icons.Filled.Home, contentDescription = "Beranda")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            )
+        },
+    ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -143,6 +174,37 @@ fun BerandaScreen(
                 }
             }
         }
+    }
+
+    if (showQuickSearch) {
+        val query = quickSearchQuery.trim()
+        val hasilProspek = if (query.isBlank()) emptyList() else prospekList.filter { it.nama.contains(query, ignoreCase = true) }
+        val hasilAgenda = if (query.isBlank()) emptyList() else agendaList.filter { it.judul.contains(query, ignoreCase = true) }
+        AlertDialog(
+            onDismissRequest = { showQuickSearch = false; quickSearchQuery = "" },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text("Pencarian Cepat")
+                    IconButton(onClick = { showQuickSearch = false; quickSearchQuery = "" }) { Icon(Icons.Filled.Close, contentDescription = "Tutup") }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = quickSearchQuery,
+                        onValueChange = { quickSearchQuery = it },
+                        placeholder = { Text("Cari prospek atau agenda...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (query.isNotBlank() && hasilProspek.isEmpty() && hasilAgenda.isEmpty()) Text("Tidak ada hasil")
+                    hasilProspek.forEach { Text("Prospek · ${it.nama}", style = MaterialTheme.typography.bodyLarge) }
+                    hasilAgenda.forEach { Text("Agenda · ${it.judul}", style = MaterialTheme.typography.bodyLarge) }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showQuickSearch = false; quickSearchQuery = "" }) { Text("Tutup") } },
+        )
     }
 }
 

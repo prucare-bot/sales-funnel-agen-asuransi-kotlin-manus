@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
                                 prospekList = prospekList,
                                 agendaList = agendaList,
                                 namaAgen = namaAgen,
+                                onHomeClick = { current = Destination.BERANDA },
                             )
                             Destination.PIPELINE -> PipelineScreen(
                                 windowSizeClass = windowSizeClass,
