@@ -21,6 +21,7 @@ import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import kotlinx.coroutines.launch
@@ -53,6 +54,8 @@ fun SettingsScreen(
     var showBusinessCard by remember { mutableStateOf(false) }
     var targetClosingInput by remember { mutableStateOf(targetClosing.toString()) }
     var targetPremiInput by remember { mutableStateOf(targetPremi.toString()) }
+    var pinInput by remember { mutableStateOf("") }
+    var lockEnabled by remember { mutableStateOf(AppLockManager.isEnabled(context)) }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -191,6 +194,38 @@ fun SettingsScreen(
                     status = "Nama user berhasil disimpan."
                 },
             ) { Text("Simpan nama user") }
+
+            Text("Keamanan Aplikasi", style = MaterialTheme.typography.titleMedium)
+            Text("Lindungi data nasabah dengan PIN minimal 4 digit.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = pinInput,
+                onValueChange = { pinInput = it.filter(Char::isDigit).take(8) },
+                label = { Text(if (lockEnabled) "PIN baru" else "PIN aplikasi") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = pinInput.length >= 4,
+                    onClick = {
+                        if (AppLockManager.setPin(context, pinInput)) {
+                            lockEnabled = true
+                            pinInput = ""
+                            status = "PIN aplikasi berhasil disimpan."
+                        } else {
+                            status = "PIN harus berupa minimal 4 digit."
+                        }
+                    },
+                ) { Text(if (lockEnabled) "Ganti PIN" else "Aktifkan PIN") }
+                if (lockEnabled) {
+                    OutlinedButton(onClick = {
+                        AppLockManager.clearPin(context)
+                        lockEnabled = false
+                        pinInput = ""
+                        status = "Kunci PIN dinonaktifkan."
+                    }) { Text("Nonaktifkan") }
+                }
+            }
 
             Text("Target Penjualan", style = MaterialTheme.typography.titleMedium)
             Text("Tetapkan target closing dan estimasi premi untuk memantau pencapaian di Beranda.", style = MaterialTheme.typography.bodySmall)

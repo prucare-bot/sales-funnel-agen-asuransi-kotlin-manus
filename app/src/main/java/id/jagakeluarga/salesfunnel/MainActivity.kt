@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import id.jagakeluarga.salesfunnel.notification.AgendaReminderWorker
+import id.jagakeluarga.salesfunnel.security.AppLockGate
 import id.jagakeluarga.salesfunnel.ui.AppViewModel
 import id.jagakeluarga.salesfunnel.ui.navigation.AdaptiveScaffold
 import id.jagakeluarga.salesfunnel.ui.navigation.Destination
@@ -74,7 +75,8 @@ class MainActivity : ComponentActivity() {
             val prospekTerpilih = selectedProspekId?.let { id -> prospekList.find { it.id == id } }
 
             SalesFunnelTheme(theme = tema) {
-                if (prospekTerpilih != null) {
+                AppLockGate {
+                    if (prospekTerpilih != null) {
                     val riwayatStatus by viewModel.statusHistoryForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
                     DetailProspekScreen(
                         prospek = prospekTerpilih,

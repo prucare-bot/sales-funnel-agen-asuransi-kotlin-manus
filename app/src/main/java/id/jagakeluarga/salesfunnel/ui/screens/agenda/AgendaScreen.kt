@@ -71,27 +71,28 @@ fun AgendaScreen(
                             if (terlambat) {
                                 Text("Terlambat", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                             }
-                        }
-                    },
-                    trailingContent = {
-                        Row {
-                            IconButton(
-                                enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
-                                onClick = { templateAgenda = agenda },
-                            ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
-                            IconButton(
-                                onClick = {
-                                    onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false))
-                                },
-                            ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
-                            IconButton(onClick = {
-                                dialogAgenda = agenda
-                                showDialog = true
-                            }) {
-                                Icon(Icons.Filled.Edit, contentDescription = "Edit agenda")
-                            }
-                            IconButton(onClick = { onHapus(agenda) }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                IconButton(
+                                    enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
+                                    onClick = { templateAgenda = agenda },
+                                ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
+                                IconButton(
+                                    onClick = {
+                                        onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false))
+                                    },
+                                ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
+                                IconButton(onClick = {
+                                    dialogAgenda = agenda
+                                    showDialog = true
+                                }) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Edit agenda")
+                                }
+                                IconButton(onClick = { onHapus(agenda) }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+                                }
                             }
                         }
                     },
