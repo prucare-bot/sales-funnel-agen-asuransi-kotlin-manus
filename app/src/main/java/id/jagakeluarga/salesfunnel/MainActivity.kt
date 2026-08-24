@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                         windowSizeClass = windowSizeClass,
                         current = current,
                         onNavigate = { current = it },
+                        onQuickSearch = { current = Destination.PROSPEK },
                     ) { destination ->
                         when (destination) {
                             Destination.BERANDA -> BerandaScreen(
