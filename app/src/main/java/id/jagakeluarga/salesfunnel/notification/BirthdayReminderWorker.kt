@@ -19,38 +19,42 @@ class BirthdayReminderWorker(
         const val KEY_NAME = "name"
         const val KEY_PHONE = "phone"
         const val KEY_BIRTHDAY = "birthday"
+        const val KEY_IS_TODAY = "is_today"
         private const val CHANNEL_ID = "birthday_reminders"
     }
 
     override suspend fun doWork(): Result {
         val name = inputData.getString(KEY_NAME) ?: "Nasabah"
+        val nasabahId = inputData.getString(KEY_ID) ?: "worker-$name"
         val birthday = inputData.getLong(KEY_BIRTHDAY, 0L)
+        val isToday = inputData.getBoolean(KEY_IS_TODAY, false)
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "Pengingat Ulang Tahun", NotificationManager.IMPORTANCE_HIGH)
             )
         }
-        manager.notify(id.hashCode(), NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+        val notificationText = if (isToday) {
+            "Hari ini ulang tahun $name. Saat yang tepat untuk menyapa."
+        } else {
+            "Besok ulang tahun $name. Saat yang tepat untuk menyapa."
+        }
+        manager.notify(nasabahId.hashCode(), NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Ulang tahun nasabah")
-            .setContentText("Besok ulang tahun $name. Saat yang tepat untuk menyapa.")
+            .setContentText(notificationText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build())
 
-        val next = Calendar.getInstance().apply {
-            timeInMillis = birthday
-            add(Calendar.YEAR, 1)
-        }
         BirthdayReminderScheduler.schedule(
             applicationContext,
             Nasabah(
-                id = inputData.getString(KEY_ID) ?: "worker-$name",
+                id = nasabahId,
                 nama = name,
                 nomorTelepon = inputData.getString(KEY_PHONE),
                 produk = "",
-                tanggalLahir = next.timeInMillis,
+                tanggalLahir = birthday,
             ),
         )
         return Result.success()

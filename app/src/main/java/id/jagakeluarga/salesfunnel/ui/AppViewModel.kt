@@ -13,6 +13,7 @@ import id.jagakeluarga.salesfunnel.notification.BirthdayReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val nasabahList = repository.nasabahList.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
+
+    init {
+        viewModelScope.launch {
+            repository.nasabahList.first().forEach { nasabah ->
+                BirthdayReminderScheduler.scheduleIfBirthdayToday(getApplication(), nasabah)
+            }
+        }
+    }
 
     fun saveProspek(prospek: Prospek) = viewModelScope.launch {
         runCatching { repository.saveProspek(prospek) }
@@ -59,7 +68,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
         if (result is SalesFunnelRepository.ConversionResult.Created) {
-            BirthdayReminderScheduler.schedule(getApplication(), result.nasabah)
+            BirthdayReminderScheduler.scheduleIfBirthdayToday(getApplication(), result.nasabah)
         }
         onResult(result)
     }
@@ -82,7 +91,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         runCatching {
             repository.saveNasabah(nasabah)
             BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
-            BirthdayReminderScheduler.schedule(getApplication(), nasabah)
+            BirthdayReminderScheduler.scheduleIfBirthdayToday(getApplication(), nasabah)
         }.onFailure { reportError("Nasabah gagal disimpan", it) }
     }
     fun deleteNasabah(nasabah: Nasabah) = viewModelScope.launch {
