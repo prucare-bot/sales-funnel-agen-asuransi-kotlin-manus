@@ -184,32 +184,20 @@ fun ProspekDialog(
     // Ambil nama + nomor dari Kontak HP (termasuk kontak yang juga dipakai di WhatsApp,
     // karena WhatsApp mencocokkan nomor lewat kontak HP yang sama -- tidak ada API
     // resmi untuk baca daftar kontak WhatsApp secara langsung dari app lain).
+    // Target picker langsung ke Phone.CONTENT_URI (bukan Contacts.CONTENT_URI) supaya
+    // URI hasil pilihan sudah berisi nomor telepon langsung -- tidak perlu query kedua
+    // yang butuh izin READ_CONTACTS terpisah.
     val pickContactLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickContact()
-    ) { uri: Uri? ->
-        uri?.let { contactUri ->
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val contactUri = result.data?.data
+        if (contactUri != null) {
             context.contentResolver.query(contactUri, null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val nameIdx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                    val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                     if (nameIdx >= 0) cursor.getString(nameIdx)?.let { nama = it }
-
-                    val idIdx = cursor.getColumnIndex(ContactsContract.Contacts._ID)
-                    val contactId = if (idIdx >= 0) cursor.getString(idIdx) else null
-
-                    contactId?.let { cid ->
-                        context.contentResolver.query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            null,
-                            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                            arrayOf(cid),
-                            null,
-                        )?.use { phoneCursor ->
-                            if (phoneCursor.moveToFirst()) {
-                                val numIdx = phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                                if (numIdx >= 0) phoneCursor.getString(numIdx)?.let { telepon = it }
-                            }
-                        }
-                    }
+                    val numIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                    if (numIdx >= 0) cursor.getString(numIdx)?.let { telepon = it }
                 }
             }
         }
@@ -221,7 +209,11 @@ fun ProspekDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
-                    onClick = { pickContactLauncher.launch(null) },
+                    onClick = {
+                        pickContactLauncher.launch(
+                            Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
