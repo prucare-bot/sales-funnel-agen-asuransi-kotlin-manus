@@ -284,6 +284,7 @@ fun ProspekDialog(
     var tahap by remember { mutableStateOf(initial?.tahap ?: TahapPipeline.PROSPEK) }
     var expanded by remember { mutableStateOf(false) }
     var showContactPicker by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     val contactPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -349,6 +350,7 @@ fun ProspekDialog(
                         }
                     }
                 }
+                validationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
@@ -363,6 +365,9 @@ fun ProspekDialog(
                             diperbaruiPada = System.currentTimeMillis(),
                         )
                     )
+                    validationError = null
+                } else {
+                    validationError = "Nama prospek wajib diisi."
                 }
             }) { Text("Simpan") }
         },

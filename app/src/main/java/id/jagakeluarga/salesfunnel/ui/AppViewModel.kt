@@ -10,12 +10,21 @@ import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository
 import id.jagakeluarga.salesfunnel.notification.AgendaScheduler
 import id.jagakeluarga.salesfunnel.notification.BirthdayReminderScheduler
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SalesFunnelRepository(AppDatabase.getInstance(application))
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
+
+    fun clearError() { _errorMessage.value = null }
+    private fun reportError(prefix: String, error: Throwable) {
+        _errorMessage.value = "$prefix: ${error.message ?: "silakan coba lagi"}"
+    }
 
     val prospekList = repository.prospekList.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
@@ -27,8 +36,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
-    fun saveProspek(prospek: Prospek) = viewModelScope.launch { repository.saveProspek(prospek) }
-    fun deleteProspek(prospek: Prospek) = viewModelScope.launch { repository.deleteProspek(prospek) }
+    fun saveProspek(prospek: Prospek) = viewModelScope.launch {
+        runCatching { repository.saveProspek(prospek) }
+            .onFailure { reportError("Prospek gagal disimpan", it) }
+    }
+    fun deleteProspek(prospek: Prospek) = viewModelScope.launch {
+        runCatching { repository.deleteProspek(prospek) }
+            .onFailure { reportError("Prospek gagal dihapus", it) }
+    }
 
     fun statusHistoryForProspek(prospekId: String) = repository.statusHistoryForProspek(prospekId)
 
@@ -38,7 +53,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         nomorPolis: String?,
         onResult: (SalesFunnelRepository.ConversionResult) -> Unit,
     ) = viewModelScope.launch {
-        val result = repository.convertProspekToNasabah(prospek, produk, nomorPolis)
+        val result = runCatching { repository.convertProspekToNasabah(prospek, produk, nomorPolis) }
+            .getOrElse {
+                reportError("Prospek gagal dikonversi", it)
+                return@launch
+            }
         if (result is SalesFunnelRepository.ConversionResult.Created) {
             BirthdayReminderScheduler.schedule(getApplication(), result.nasabah)
         }
@@ -46,22 +65,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun saveAgenda(agenda: Agenda) = viewModelScope.launch {
-        repository.saveAgenda(agenda)
-        AgendaScheduler.schedule(getApplication(), agenda)
+        runCatching {
+            repository.saveAgenda(agenda)
+            AgendaScheduler.schedule(getApplication(), agenda)
+        }.onFailure { reportError("Agenda gagal disimpan", it) }
     }
 
     fun deleteAgenda(agenda: Agenda) = viewModelScope.launch {
-        AgendaScheduler.cancel(getApplication(), agenda.id)
-        repository.deleteAgenda(agenda)
+        runCatching {
+            AgendaScheduler.cancel(getApplication(), agenda.id)
+            repository.deleteAgenda(agenda)
+        }.onFailure { reportError("Agenda gagal dihapus", it) }
     }
 
     fun saveNasabah(nasabah: Nasabah) = viewModelScope.launch {
-        repository.saveNasabah(nasabah)
-        BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
-        BirthdayReminderScheduler.schedule(getApplication(), nasabah)
+        runCatching {
+            repository.saveNasabah(nasabah)
+            BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
+            BirthdayReminderScheduler.schedule(getApplication(), nasabah)
+        }.onFailure { reportError("Nasabah gagal disimpan", it) }
     }
     fun deleteNasabah(nasabah: Nasabah) = viewModelScope.launch {
-        BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
-        repository.deleteNasabah(nasabah)
+        runCatching {
+            BirthdayReminderScheduler.cancel(getApplication(), nasabah.id)
+            repository.deleteNasabah(nasabah)
+        }.onFailure { reportError("Nasabah gagal dihapus", it) }
     }
 }

@@ -3,6 +3,7 @@ package id.jagakeluarga.salesfunnel
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -71,6 +72,14 @@ class MainActivity : ComponentActivity() {
             val prospekList by viewModel.prospekList.collectAsState()
             val agendaList by viewModel.agendaList.collectAsState()
             val nasabahList by viewModel.nasabahList.collectAsState()
+            val errorMessage by viewModel.errorMessage.collectAsState()
+
+            LaunchedEffect(errorMessage) {
+                errorMessage?.let { message ->
+                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                    viewModel.clearError()
+                }
+            }
 
             val prospekTerpilih = selectedProspekId?.let { id -> prospekList.find { it.id == id } }
 

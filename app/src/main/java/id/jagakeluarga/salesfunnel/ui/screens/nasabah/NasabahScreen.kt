@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
@@ -35,7 +36,23 @@ fun NasabahScreen(
             }) { Text("+") }
         },
     ) { padding ->
-        LazyColumn(
+        if (nasabahList.isEmpty()) {
+            Column(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Belum ada data nasabah.", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Text("Tambahkan nasabah untuk menyimpan data polis dan ulang tahun.")
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = { editingNasabah = null; showDialog = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Tambah nasabah")
+                }
+            }
+        } else LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -93,6 +110,7 @@ private fun NasabahDialog(
     var nomorPolis by remember(initialNasabah?.id) { mutableStateOf(initialNasabah?.nomorPolis.orEmpty()) }
     var tanggalLahir by rememberSaveable(initialNasabah?.id) { mutableStateOf(initialNasabah?.tanggalLahir) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     if (showDatePicker) {
         val state = rememberDatePickerState(initialSelectedDateMillis = tanggalLahir ?: System.currentTimeMillis())
@@ -118,6 +136,7 @@ private fun NasabahDialog(
                     Spacer(Modifier.width(8.dp))
                     Text(tanggalLahir?.let { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(it)) } ?: "Pilih tanggal lahir")
                 }
+                validationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
@@ -136,6 +155,9 @@ private fun NasabahDialog(
                             tanggalLahir = tanggalLahir,
                         ),
                     )
+                    validationError = null
+                } else {
+                    validationError = "Nama dan produk nasabah wajib diisi."
                 }
             }) { Text("Simpan") }
         },

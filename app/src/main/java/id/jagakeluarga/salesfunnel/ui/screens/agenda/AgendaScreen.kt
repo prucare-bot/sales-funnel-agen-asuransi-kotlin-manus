@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +50,23 @@ fun AgendaScreen(
             }) { Icon(Icons.Filled.Add, contentDescription = "Tambah agenda") }
         },
     ) { padding ->
-        LazyColumn(
+        if (agendaList.isEmpty()) {
+            Column(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text("Belum ada agenda follow-up.", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Text("Tambahkan agenda pertama untuk mulai mengatur tindak lanjut.")
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = { dialogAgenda = null; showDialog = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Tambah agenda")
+                }
+            }
+        } else LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -159,6 +176,7 @@ private fun AgendaDialog(
     var expandedReminder by remember { mutableStateOf(false) }
     var showProspekPicker by remember { mutableStateOf(false) }
     var expandedJenis by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     if (showProspekPicker) {
         ProspekPickerDialog(
@@ -251,6 +269,7 @@ private fun AgendaDialog(
                         }
                     }
                 }
+                validationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
@@ -270,6 +289,9 @@ private fun AgendaDialog(
                         reminderOffsetHours = reminderOffsetHours,
                     )
                     onSimpan(agenda)
+                    validationError = null
+                } else {
+                    validationError = "Judul agenda wajib diisi."
                 }
             }) { Text("Simpan") }
         },
