@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,11 +24,15 @@ fun NasabahScreen(
     onHapus: (Nasabah) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var editingNasabah by remember { mutableStateOf<Nasabah?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Nasabah") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) { Text("+") }
+            FloatingActionButton(onClick = {
+                editingNasabah = null
+                showDialog = true
+            }) { Text("+") }
         },
     ) { padding ->
         LazyColumn(
@@ -43,8 +48,16 @@ fun NasabahScreen(
                         Text("${nasabah.produk} · Lahir: $lahir")
                     },
                     trailingContent = {
-                        IconButton(onClick = { onHapus(nasabah) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+                        Row {
+                            IconButton(onClick = {
+                                editingNasabah = nasabah
+                                showDialog = true
+                            }) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Edit nasabah")
+                            }
+                            IconButton(onClick = { onHapus(nasabah) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "Hapus")
+                            }
                         }
                     },
                 )
@@ -54,16 +67,31 @@ fun NasabahScreen(
     }
 
     if (showDialog) {
-        NasabahDialog(onDismiss = { showDialog = false }, onSimpan = { onSimpan(it); showDialog = false })
+        NasabahDialog(
+            initialNasabah = editingNasabah,
+            onDismiss = {
+                showDialog = false
+                editingNasabah = null
+            },
+            onSimpan = {
+                onSimpan(it)
+                showDialog = false
+                editingNasabah = null
+            },
+        )
     }
 }
 
 @Composable
-private fun NasabahDialog(onDismiss: () -> Unit, onSimpan: (Nasabah) -> Unit) {
-    var nama by remember { mutableStateOf("") }
-    var produk by remember { mutableStateOf("") }
-    var nomorPolis by remember { mutableStateOf("") }
-    var tanggalLahir by rememberSaveable { mutableStateOf<Long?>(null) }
+private fun NasabahDialog(
+    initialNasabah: Nasabah?,
+    onDismiss: () -> Unit,
+    onSimpan: (Nasabah) -> Unit,
+) {
+    var nama by remember(initialNasabah?.id) { mutableStateOf(initialNasabah?.nama.orEmpty()) }
+    var produk by remember(initialNasabah?.id) { mutableStateOf(initialNasabah?.produk.orEmpty()) }
+    var nomorPolis by remember(initialNasabah?.id) { mutableStateOf(initialNasabah?.nomorPolis.orEmpty()) }
+    var tanggalLahir by rememberSaveable(initialNasabah?.id) { mutableStateOf(initialNasabah?.tanggalLahir) }
     var showDatePicker by remember { mutableStateOf(false) }
 
     if (showDatePicker) {
@@ -79,7 +107,7 @@ private fun NasabahDialog(onDismiss: () -> Unit, onSimpan: (Nasabah) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tambah Nasabah") },
+        title = { Text(if (initialNasabah == null) "Tambah Nasabah" else "Edit Nasabah") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") })
@@ -95,7 +123,19 @@ private fun NasabahDialog(onDismiss: () -> Unit, onSimpan: (Nasabah) -> Unit) {
         confirmButton = {
             TextButton(onClick = {
                 if (nama.isNotBlank() && produk.isNotBlank()) {
-                    onSimpan(Nasabah(nama = nama, produk = produk, nomorPolis = nomorPolis.ifBlank { null }, tanggalLahir = tanggalLahir))
+                    onSimpan(
+                        initialNasabah?.copy(
+                            nama = nama,
+                            produk = produk,
+                            nomorPolis = nomorPolis.ifBlank { null },
+                            tanggalLahir = tanggalLahir,
+                        ) ?: Nasabah(
+                            nama = nama,
+                            produk = produk,
+                            nomorPolis = nomorPolis.ifBlank { null },
+                            tanggalLahir = tanggalLahir,
+                        ),
+                    )
                 }
             }) { Text("Simpan") }
         },
