@@ -1,12 +1,14 @@
 package id.jagakeluarga.salesfunnel.ui.screens.agenda
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -106,14 +108,19 @@ private fun AgendaDialog(
     }
     var reminderOffsetHours by remember(agendaAwal) { mutableStateOf(agendaAwal?.reminderOffsetHours ?: 24) }
     var expandedReminder by remember { mutableStateOf(false) }
-    var pencarianProspek by remember { mutableStateOf("") }
-    var expandedProspek by remember { mutableStateOf(false) }
+    var showProspekPicker by remember { mutableStateOf(false) }
     var expandedJenis by remember { mutableStateOf(false) }
 
-    val prospekTerfilter = remember(pencarianProspek, prospekTerurut) {
-        val query = pencarianProspek.trim().lowercase(Locale("id", "ID"))
-        if (query.isBlank()) prospekTerurut
-        else prospekTerurut.filter { it.nama.lowercase(Locale("id", "ID")).contains(query) }
+    if (showProspekPicker) {
+        ProspekPickerDialog(
+            prospekList = prospekTerurut,
+            selectedProspekId = prospek.id,
+            onDismiss = { showProspekPicker = false },
+            onSelected = {
+                prospek = it
+                showProspekPicker = false
+            },
+        )
     }
 
     AlertDialog(
@@ -128,51 +135,14 @@ private fun AgendaDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                ExposedDropdownMenuBox(
-                    expanded = expandedProspek,
-                    onExpandedChange = { expandedProspek = it },
-                ) {
-                    OutlinedTextField(
-                        value = prospek.nama,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Prospek") },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expandedProspek,
-                        onDismissRequest = { expandedProspek = false },
-                        modifier = Modifier.heightIn(max = 360.dp),
-                    ) {
-                        OutlinedTextField(
-                            value = pencarianProspek,
-                            onValueChange = { pencarianProspek = it },
-                            label = { Text("Cari nasabah/prospek") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        )
-                        if (prospekTerfilter.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text("Prospek tidak ditemukan") },
-                                onClick = {},
-                                enabled = false,
-                            )
-                        } else {
-                            LazyColumn(modifier = Modifier.heightIn(max = 260.dp)) {
-                                items(prospekTerfilter, key = { it.id }) { p ->
-                                    DropdownMenuItem(
-                                        text = { Text(p.nama) },
-                                        onClick = {
-                                            prospek = p
-                                            pencarianProspek = ""
-                                            expandedProspek = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                OutlinedTextField(
+                    value = prospek.nama,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Prospek") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth().clickable { showProspekPicker = true },
+                )
                 DateTimePickerField(
                     selectedMillis = waktuMulai,
                     onSelectedMillisChange = { waktuMulai = it },
@@ -248,5 +218,47 @@ private fun AgendaDialog(
             }) { Text("Simpan") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
+    )
+}
+
+
+@Composable
+private fun ProspekPickerDialog(
+    prospekList: List<Prospek>,
+    selectedProspekId: String,
+    onDismiss: () -> Unit,
+    onSelected: (Prospek) -> Unit,
+) {
+    var query by remember { mutableStateOf("") }
+    val filtered = remember(prospekList, query) {
+        val normalized = query.trim().lowercase(Locale("id", "ID"))
+        if (normalized.isBlank()) prospekList
+        else prospekList.filter { it.nama.lowercase(Locale("id", "ID")).contains(normalized) }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pilih Prospek") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("Cari nama prospek") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                    items(filtered, key = { it.id }) { item ->
+                        DropdownMenuItem(
+                            text = { Text(item.nama) },
+                            trailingIcon = { if (item.id == selectedProspekId) Text("✓") },
+                            onClick = { onSelected(item) },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Tutup") } },
     )
 }
