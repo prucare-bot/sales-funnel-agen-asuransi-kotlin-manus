@@ -8,7 +8,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
@@ -41,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -146,42 +143,33 @@ private fun CozyBottomBar(
     tabDestinations: List<Destination>,
 ) {
     val colors = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary)))
-            .padding(horizontal = 0.dp, vertical = 5.dp),
+    NavigationBar(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = colors.surface,
+        tonalElevation = 0.dp,
     ) {
-        NavigationBar(
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = Color.Transparent,
-            tonalElevation = 0.dp,
-        ) {
-            tabDestinations.forEach { dest ->
-                NavigationBarItem(
-                    selected = dest == current,
-                    onClick = { onNavigate(dest) },
-                    icon = { Icon(dest.icon, contentDescription = dest.label) },
-                    label = {
-                        Text(
-                            dest.label,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Clip,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        )
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = colors.onPrimary,
-                        selectedTextColor = colors.onPrimary,
-                        indicatorColor = colors.onPrimary.copy(alpha = 0.18f),
-                        unselectedIconColor = colors.onPrimary.copy(alpha = 0.78f),
-                        unselectedTextColor = colors.onPrimary.copy(alpha = 0.78f),
-                    ),
-                )
-            }
+        tabDestinations.forEach { dest ->
+            NavigationBarItem(
+                selected = dest == current,
+                onClick = { onNavigate(dest) },
+                icon = { Icon(dest.icon, contentDescription = dest.label) },
+                label = {
+                    Text(
+                        dest.label,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = colors.primary,
+                    selectedTextColor = colors.primary,
+                    indicatorColor = Color.Transparent,
+                    unselectedIconColor = colors.onSurfaceVariant,
+                    unselectedTextColor = colors.onSurfaceVariant,
+                ),
+            )
         }
     }
 }
