@@ -7,31 +7,37 @@ plugins {
 
 android {
     namespace = "id.jagakeluarga.salesfunnel"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "id.jagakeluarga.salesfunnel"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.0.1"
     }
 
     signingConfigs {
         getByName("debug") {
-            // Stable keystore committed to the repo so the SHA-1 fingerprint
-            // never changes between builds (required for Google Sign-In).
+            // Stable debug keystore for local development and Google Sign-In debugging.
             storeFile = file("../keystore/debug.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+        }
+        create("release") {
+            // Production credentials are supplied only by CI environment secrets.
+            storeFile = file(System.getenv("RELEASE_KEYSTORE_PATH") ?: "../keystore/release.keystore")
+            storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "sales-funnel-upload"
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: ""
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
