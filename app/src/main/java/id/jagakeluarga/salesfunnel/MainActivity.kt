@@ -174,6 +174,7 @@ class MainActivity : ComponentActivity() {
                                         .putLong("target_premi", premi)
                                         .apply()
                                 },
+                                onDatabaseRestored = viewModel::reloadAfterRestore,
                             )
                         }
                     }

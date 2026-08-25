@@ -41,7 +41,9 @@ class GoogleDriveBackupManager(private val context: Context) {
     fun signInIntent(): Intent = signInClient().signInIntent
 
     fun currentAccount(): GoogleSignInAccount? =
-        GoogleSignIn.getLastSignedInAccount(context)
+        GoogleSignIn.getLastSignedInAccount(context)?.takeIf { account ->
+            GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))
+        }
 
     fun signOut() {
         signInClient().signOut()

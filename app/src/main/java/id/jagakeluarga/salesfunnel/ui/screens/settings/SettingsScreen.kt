@@ -26,7 +26,6 @@ import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
 import id.jagakeluarga.salesfunnel.data.AppDatabase
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,6 +42,7 @@ fun SettingsScreen(
     targetClosing: Int = 10,
     targetPremi: Long = 0L,
     onTargetChanged: (Int, Long) -> Unit = { _, _ -> },
+    onDatabaseRestored: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val manager = remember { GoogleDriveBackupManager(context) }
@@ -84,9 +84,8 @@ fun SettingsScreen(
                 try {
                     AppDatabase.closeInstance()
                     LocalBackupManager.importDatabase(context.contentResolver, uri, java.io.File(dbFilePath))
-                    status = "Restore lokal berhasil. Memuat ulang data..."
-                    delay(250)
-                    (context as? Activity)?.recreate()
+                    onDatabaseRestored()
+                    status = "Restore lokal berhasil. Data sudah dimuat ulang."
                 } catch (e: Exception) {
                     status = "Restore lokal gagal: ${e.message}"
                 } finally { isBusy = false }
@@ -131,16 +130,15 @@ fun SettingsScreen(
         if (result.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
-                account = task.result
-                status = "Berhasil masuk sebagai ${account?.email}"
+                account = task.getResult(ApiException::class.java)
+                status = "Berhasil masuk sebagai ${account?.email}. Akses Google Drive siap digunakan."
+            } catch (e: ApiException) {
+                status = "Gagal masuk Google (kode ${e.statusCode}): ${e.statusMessage ?: "periksa OAuth dan SHA-1 release"}"
             } catch (e: Exception) {
-                val code = (e as? ApiException)?.statusCode
-                status = if (code != null) {
-                    "Gagal masuk Google (kode $code). Periksa konfigurasi OAuth dan SHA-1 release."
-                } else {
-                    "Gagal masuk: ${e.message}"
-                }
+                status = "Gagal masuk Google: ${e.message ?: "silakan coba lagi"}"
             }
+        } else {
+            status = "Login Google dibatalkan atau tidak mendapat izin Drive."
         }
     }
 
@@ -295,8 +293,15 @@ fun SettingsScreen(
             )
 
             if (account == null) {
-                Button(onClick = { signInLauncher.launch(manager.signInIntent()) }) {
-                    Text("Masuk dengan Google")
+                Button(
+                    enabled = !isBusy,
+                    onClick = {
+                        status = "Membuka login Google..."
+                        runCatching { signInLauncher.launch(manager.signInIntent()) }
+                            .onFailure { status = "Login Google tidak dapat dibuka: ${it.message ?: "silakan coba lagi"}" }
+                    },
+                ) {
+                    Text("Masuk dengan Google & izinkan Drive")
                 }
             } else {
                 Text("Masuk sebagai: ${account?.email}")
@@ -328,8 +333,11 @@ fun SettingsScreen(
                                 try {
                                     val dbFile = java.io.File(dbFilePath)
                                     val found = manager.restoreNow(dbFile)
+                                    if (found) {
+                                        onDatabaseRestored()
+                                    }
                                     status = if (found) {
-                                        "Berhasil dipulihkan. Tutup dan buka lagi aplikasinya."
+                                        "Database berhasil dipulihkan dari Google Drive dan data sudah dimuat ulang."
                                     } else {
                                         "Belum ada backup tersimpan di Drive."
                                     }

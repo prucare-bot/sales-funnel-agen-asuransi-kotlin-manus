@@ -13,12 +13,15 @@ import id.jagakeluarga.salesfunnel.notification.BirthdayReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = SalesFunnelRepository(AppDatabase.getInstance(application))
+    @Volatile private var repository = SalesFunnelRepository(AppDatabase.getInstance(application))
+    private val databaseGeneration = MutableStateFlow(0)
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
@@ -27,15 +30,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _errorMessage.value = "$prefix: ${error.message ?: "silakan coba lagi"}"
     }
 
-    val prospekList = repository.prospekList.stateIn(
+    val prospekList = databaseGeneration.flatMapLatest { repository.prospekList }.catch { emit(emptyList()) }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
-    val agendaList = repository.agendaList.stateIn(
+    val agendaList = databaseGeneration.flatMapLatest { repository.agendaList }.catch { emit(emptyList()) }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
-    val nasabahList = repository.nasabahList.stateIn(
+    val nasabahList = databaseGeneration.flatMapLatest { repository.nasabahList }.catch { emit(emptyList()) }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
+
+    /** Rebinds all observable flows to the database file just restored on disk. */
+    fun reloadAfterRestore() {
+        repository = SalesFunnelRepository(AppDatabase.getInstance(getApplication()))
+        databaseGeneration.value += 1
+    }
 
     init {
         viewModelScope.launch {
