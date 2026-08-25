@@ -41,9 +41,10 @@ class GoogleDriveBackupManager(private val context: Context) {
     fun signInIntent(): Intent = signInClient().signInIntent
 
     fun currentAccount(): GoogleSignInAccount? =
-        GoogleSignIn.getLastSignedInAccount(context)?.takeIf { account ->
-            GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))
-        }
+        GoogleSignIn.getLastSignedInAccount(context)
+
+    fun hasDrivePermission(account: GoogleSignInAccount): Boolean =
+        GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_APPDATA))
 
     fun signOut() {
         signInClient().signOut()
@@ -66,6 +67,7 @@ class GoogleDriveBackupManager(private val context: Context) {
         AppDatabase.checkpoint()
         check(dbFile.exists() && dbFile.length() > 0L) { "File database belum siap untuk backup" }
         val account = currentAccount() ?: error("Belum sign in ke Google")
+        check(hasDrivePermission(account)) { "Akun Google belum memberi izin Google Drive. Tekan login Google lagi dan izinkan akses Drive." }
         val drive = driveService(account)
 
         val existingId = findBackupFileId(drive)
@@ -86,6 +88,7 @@ class GoogleDriveBackupManager(private val context: Context) {
     /** Downloads the backup from appDataFolder and overwrites the local DB file. Returns true if a backup existed. */
     suspend fun restoreNow(dbFile: JavaFile): Boolean = withContext(Dispatchers.IO) {
         val account = currentAccount() ?: error("Belum sign in ke Google")
+        check(hasDrivePermission(account)) { "Akun Google belum memberi izin Google Drive. Tekan login Google lagi dan izinkan akses Drive." }
         val drive = driveService(account)
         val fileId = findBackupFileId(drive) ?: return@withContext false
 

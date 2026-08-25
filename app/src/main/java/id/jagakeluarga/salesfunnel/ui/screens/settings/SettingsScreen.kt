@@ -59,6 +59,7 @@ fun SettingsScreen(
     var targetPremiInput by remember { mutableStateOf(targetPremi.toString()) }
     var pinInput by remember { mutableStateOf("") }
     var lockEnabled by remember { mutableStateOf(AppLockManager.isEnabled(context)) }
+    val driveReady = account?.let(manager::hasDrivePermission) == true
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -131,7 +132,12 @@ fun SettingsScreen(
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
                 account = task.getResult(ApiException::class.java)
-                status = "Berhasil masuk sebagai ${account?.email}. Akses Google Drive siap digunakan."
+                val signedInAccount = account
+                status = if (signedInAccount != null && manager.hasDrivePermission(signedInAccount)) {
+                    "Berhasil masuk sebagai ${signedInAccount.email}. Akses Google Drive siap digunakan."
+                } else {
+                    "Akun Google berhasil masuk, tetapi izin Drive belum diberikan. Tekan login Google lagi lalu pilih Izinkan."
+                }
             } catch (e: ApiException) {
                 status = "Gagal masuk Google (kode ${e.statusCode}): ${e.statusMessage ?: "periksa OAuth dan SHA-1 release"}"
             } catch (e: Exception) {
@@ -292,11 +298,14 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
             )
 
-            if (account == null) {
+            if (account != null) {
+                Text("Akun Google: ${account?.email}")
+            }
+            if (!driveReady) {
                 Button(
                     enabled = !isBusy,
                     onClick = {
-                        status = "Membuka login Google..."
+                        status = "Membuka login Google dan permintaan izin Drive..."
                         runCatching { signInLauncher.launch(manager.signInIntent()) }
                             .onFailure { status = "Login Google tidak dapat dibuka: ${it.message ?: "silakan coba lagi"}" }
                     },
@@ -304,7 +313,7 @@ fun SettingsScreen(
                     Text("Masuk dengan Google & izinkan Drive")
                 }
             } else {
-                Text("Masuk sebagai: ${account?.email}")
+                Text("Google Drive terhubung")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         enabled = !isBusy,
