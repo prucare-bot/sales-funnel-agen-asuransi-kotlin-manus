@@ -2,13 +2,15 @@ package id.jagakeluarga.salesfunnel.backup
 
 import android.content.ContentResolver
 import android.net.Uri
+import id.jagakeluarga.salesfunnel.data.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 object LocalBackupManager {
     suspend fun exportDatabase(resolver: ContentResolver, databaseFile: File, destination: Uri) = withContext(Dispatchers.IO) {
-        check(databaseFile.exists()) { "File database belum tersedia" }
+        AppDatabase.checkpoint()
+        check(databaseFile.exists() && databaseFile.length() > 0L) { "File database belum tersedia" }
         resolver.openOutputStream(destination)?.use { output ->
             databaseFile.inputStream().use { input -> input.copyTo(output) }
         } ?: error("Tidak dapat membuka file tujuan")
@@ -22,6 +24,8 @@ object LocalBackupManager {
             } ?: error("Tidak dapat membuka file backup")
             check(temporary.length() > 0L) { "File backup kosong" }
             databaseFile.parentFile?.mkdirs()
+            File("${databaseFile.path}-wal").delete()
+            File("${databaseFile.path}-shm").delete()
             temporary.copyTo(databaseFile, overwrite = true)
         } finally {
             temporary.delete()

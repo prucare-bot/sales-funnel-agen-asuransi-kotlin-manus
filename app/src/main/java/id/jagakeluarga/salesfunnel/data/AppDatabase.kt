@@ -71,5 +71,18 @@ abstract class AppDatabase : RoomDatabase() {
                     "sales_funnel.db",
                 ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
             }
+
+        /** Flushes Room's WAL so file-based backups include the latest committed rows. */
+        fun checkpoint() {
+            instance?.openHelper?.writableDatabase?.query("PRAGMA wal_checkpoint(FULL)")?.use { }
+        }
+
+        /** Closes the active Room connection before an on-disk database replacement. */
+        fun closeInstance() {
+            synchronized(this) {
+                instance?.close()
+                instance = null
+            }
+        }
     }
 }

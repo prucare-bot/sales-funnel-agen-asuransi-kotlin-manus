@@ -14,6 +14,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File as DriveFile
+import id.jagakeluarga.salesfunnel.data.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File as JavaFile
@@ -60,6 +61,8 @@ class GoogleDriveBackupManager(private val context: Context) {
 
     /** Uploads (or overwrites) the local DB file to appDataFolder. Returns backup timestamp millis. */
     suspend fun backupNow(dbFile: JavaFile): Long = withContext(Dispatchers.IO) {
+        AppDatabase.checkpoint()
+        check(dbFile.exists() && dbFile.length() > 0L) { "File database belum siap untuk backup" }
         val account = currentAccount() ?: error("Belum sign in ke Google")
         val drive = driveService(account)
 
@@ -84,11 +87,21 @@ class GoogleDriveBackupManager(private val context: Context) {
         val drive = driveService(account)
         val fileId = findBackupFileId(drive) ?: return@withContext false
 
-        dbFile.parentFile?.mkdirs()
-        dbFile.outputStream().use { out ->
-            drive.files().get(fileId).executeMediaAndDownloadTo(out)
+        val temporary = JavaFile("${dbFile.path}.drive-restore.tmp")
+        try {
+            temporary.outputStream().use { out ->
+                drive.files().get(fileId).executeMediaAndDownloadTo(out)
+            }
+            check(temporary.length() > 0L) { "File backup Drive kosong" }
+            AppDatabase.closeInstance()
+            dbFile.parentFile?.mkdirs()
+            JavaFile("${dbFile.path}-wal").delete()
+            JavaFile("${dbFile.path}-shm").delete()
+            temporary.copyTo(dbFile, overwrite = true)
+            true
+        } finally {
+            temporary.delete()
         }
-        true
     }
 
     private fun findBackupFileId(drive: Drive): String? {

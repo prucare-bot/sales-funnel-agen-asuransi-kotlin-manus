@@ -17,13 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
+import id.jagakeluarga.salesfunnel.data.AppDatabase
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -79,8 +82,11 @@ fun SettingsScreen(
             isBusy = true
             scope.launch {
                 try {
+                    AppDatabase.closeInstance()
                     LocalBackupManager.importDatabase(context.contentResolver, uri, java.io.File(dbFilePath))
-                    status = "Restore lokal berhasil. Tutup paksa lalu buka kembali aplikasi agar data dimuat."
+                    status = "Restore lokal berhasil. Memuat ulang data..."
+                    delay(250)
+                    (context as? Activity)?.recreate()
                 } catch (e: Exception) {
                     status = "Restore lokal gagal: ${e.message}"
                 } finally { isBusy = false }
@@ -128,7 +134,12 @@ fun SettingsScreen(
                 account = task.result
                 status = "Berhasil masuk sebagai ${account?.email}"
             } catch (e: Exception) {
-                status = "Gagal masuk: ${e.message}"
+                val code = (e as? ApiException)?.statusCode
+                status = if (code != null) {
+                    "Gagal masuk Google (kode $code). Periksa konfigurasi OAuth dan SHA-1 release."
+                } else {
+                    "Gagal masuk: ${e.message}"
+                }
             }
         }
     }
