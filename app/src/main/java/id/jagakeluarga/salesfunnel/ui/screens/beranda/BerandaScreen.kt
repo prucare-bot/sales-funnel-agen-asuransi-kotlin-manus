@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ fun BerandaScreen(
     targetPremi: Long = 0L,
     onHomeClick: () -> Unit = {},
     onBukaAgenda: () -> Unit = {},
+    onBukaProspek: () -> Unit = {},
     onTandaiAgendaSelesai: (Agenda) -> Unit = {},
 ) {
     var periodeTerpilih by remember { mutableStateOf(InsightPeriod.LIFETIME) }
@@ -151,6 +154,11 @@ fun BerandaScreen(
                 trenProspek = trenProspek,
             )
 
+            QuickActionsCard(
+                onBukaProspek = onBukaProspek,
+                onBukaAgenda = onBukaAgenda,
+            )
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RingkasanCard(Modifier.weight(1f), "$totalProspekAktif", "Prospek aktif")
                 RingkasanCard(Modifier.weight(1f), "$closingBulanIni", "Closing bulan ini")
@@ -245,6 +253,30 @@ private fun TargetProgressCard(
             LinearProgressIndicator(progress = { closingProgress }, modifier = Modifier.fillMaxWidth())
             Text("Estimasi premi: Rp ${"%,d".format(premiAktual).replace(',', '.')} / Rp ${"%,d".format(targetPremi).replace(',', '.')}")
             LinearProgressIndicator(progress = { premiProgress }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+private fun QuickActionsCard(
+    onBukaProspek: () -> Unit,
+    onBukaAgenda: () -> Unit,
+) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Aksi Cepat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onBukaProspek, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.PersonAdd, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Prospek")
+                }
+                OutlinedButton(onClick = onBukaAgenda, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.CalendarMonth, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Agenda")
+                }
+            }
         }
     }
 }

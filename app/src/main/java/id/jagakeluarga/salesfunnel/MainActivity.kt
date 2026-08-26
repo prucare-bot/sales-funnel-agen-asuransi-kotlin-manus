@@ -136,6 +136,7 @@ class MainActivity : FragmentActivity() {
                                 targetPremi = targetPremi,
                                 onHomeClick = { current = Destination.BERANDA },
                                 onBukaAgenda = { current = Destination.AGENDA },
+                                onBukaProspek = { current = Destination.PROSPEK },
                                 onTandaiAgendaSelesai = { agenda -> viewModel.saveAgenda(agenda.copy(selesai = true)) },
                             )
                             Destination.PIPELINE -> PipelineScreen(
