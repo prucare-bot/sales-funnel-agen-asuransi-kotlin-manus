@@ -146,6 +146,28 @@ fun DetailProspekScreen(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
+            val kontakTerakhir = riwayatAktivitas
+                .filter { it.jenis == "TELEPON" || it.jenis == "PERTEMUAN" }
+                .maxByOrNull { it.dibuatPada }
+            kontakTerakhir?.let { kontak ->
+                val kontakFmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Kontak Terakhir", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            "${kontak.jenis.lowercase().replaceFirstChar { it.uppercase() }} · ${kontakFmt.format(Date(kontak.dibuatPada))}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = warna,
+                        )
+                        Text(kontak.judul, fontWeight = FontWeight.SemiBold)
+                        kontak.catatan?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                }
+            }
+
             HorizontalDivider()
 
             Row(
@@ -294,6 +316,11 @@ private fun TambahAktivitasDialog(
         title = { Text("Tambah Aktivitas") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Catatan telepon atau pertemuan akan tersimpan di timeline dan memajukan tahap pipeline otomatis.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
                         value = jenis.replace('_', ' '),

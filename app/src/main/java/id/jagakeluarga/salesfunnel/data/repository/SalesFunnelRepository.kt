@@ -47,7 +47,38 @@ class SalesFunnelRepository(private val db: AppDatabase) {
     fun aktivitasForProspek(prospekId: String): Flow<List<ProspekAktivitas>> =
         db.prospekAktivitasDao().observeByProspek(prospekId)
 
-    suspend fun saveAktivitas(aktivitas: ProspekAktivitas) = db.prospekAktivitasDao().insert(aktivitas)
+    suspend fun saveAktivitas(aktivitas: ProspekAktivitas) = db.withTransaction {
+        db.prospekAktivitasDao().insert(aktivitas)
+
+        val prospek = db.prospekDao().getById(aktivitas.prospekId) ?: return@withTransaction
+        val tahapBerikutnya = when (prospek.tahap) {
+            TahapPipeline.PROSPEK -> TahapPipeline.KUALIFIKASI
+            TahapPipeline.KUALIFIKASI -> TahapPipeline.PRESENTASI
+            TahapPipeline.PRESENTASI -> TahapPipeline.PROPOSAL
+            TahapPipeline.PROPOSAL -> TahapPipeline.CLOSING
+            TahapPipeline.CLOSING -> null
+        }
+        if (aktivitas.jenis == "TELEPON" || aktivitas.jenis == "PERTEMUAN") {
+            if (tahapBerikutnya != null) {
+                val sekarang = System.currentTimeMillis()
+                db.prospekDao().upsert(
+                    prospek.copy(tahap = tahapBerikutnya, diperbaruiPada = sekarang),
+                )
+                db.prospekStatusHistoryDao().insert(
+                    ProspekStatusHistory(prospekId = prospek.id, tahap = tahapBerikutnya, diubahPada = sekarang),
+                )
+                db.prospekAktivitasDao().insert(
+                    ProspekAktivitas(
+                        prospekId = prospek.id,
+                        jenis = "STATUS",
+                        judul = "Tahap otomatis menjadi ${tahapBerikutnya.label}",
+                        catatan = "Dipicu oleh ${aktivitas.jenis.lowercase()}: ${aktivitas.judul}",
+                        dibuatPada = sekarang,
+                    ),
+                )
+            }
+        }
+    }
 
     suspend fun convertProspekToNasabah(prospek: Prospek, produk: String, nomorPolis: String?): ConversionResult =
         db.withTransaction {
