@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.importer.ProspekCsvImporter
 import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.backup.LocalBackupManager
 import id.jagakeluarga.salesfunnel.data.AppDatabase
@@ -43,6 +44,7 @@ fun SettingsScreen(
     targetPremi: Long = 0L,
     onTargetChanged: (Int, Long) -> Unit = { _, _ -> },
     onDatabaseRestored: () -> Unit = {},
+    onImportProspek: (List<Prospek>) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -61,6 +63,7 @@ fun SettingsScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var requestUsernameFocus by remember { mutableStateOf(false) }
     var usernameSaved by remember { mutableStateOf(false) }
+    var importPreview by remember { mutableStateOf<ProspekCsvImporter.Result?>(null) }
     var showBackupPinDialog by remember { mutableStateOf(false) }
     var backupPinInput by remember { mutableStateOf("") }
     var pendingBackupUri by remember { mutableStateOf<Uri?>(null) }
@@ -91,6 +94,33 @@ fun SettingsScreen(
             pendingBackupUri = null
             backupPinInput = ""
             showBackupPinDialog = true
+        }
+    }
+
+    val importProspekLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val csv = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                        ?: error("Tidak dapat membaca file CSV")
+                    val parsed = ProspekCsvImporter.parse(csv)
+                    val existingKeys = prospekList.mapNotNull { prospek ->
+                        prospek.nomorTelepon?.filter(Char::isDigit)?.takeIf { it.isNotEmpty() }
+                            ?: prospek.nama.trim().lowercase().takeIf { it.isNotEmpty() }
+                    }.toSet()
+                    val newProspek = parsed.valid.filterNot { prospek ->
+                        val key = prospek.nomorTelepon?.filter(Char::isDigit)?.takeIf { it.isNotEmpty() }
+                            ?: prospek.nama.trim().lowercase()
+                        key in existingKeys
+                    }
+                    val existingDuplicates = parsed.valid.filter { it !in newProspek }.map { "${it.nama} (sudah ada)" }
+                    importPreview = parsed.copy(valid = newProspek, duplicates = parsed.duplicates + existingDuplicates)
+                } catch (e: Exception) {
+                    status = "Impor CSV gagal: ${e.message}"
+                }
+            }
         }
     }
 
@@ -264,6 +294,10 @@ fun SettingsScreen(
             OutlinedButton(enabled = !isBusy, onClick = { reportLauncher.launch("sales_funnel_laporan.csv") }) {
                 Text("Ekspor laporan CSV")
             }
+            OutlinedButton(
+                enabled = !isBusy,
+                onClick = { importProspekLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "text/*")) },
+            ) { Text("Impor prospek CSV") }
 
             Text("Backup lokal", style = MaterialTheme.typography.titleMedium)
             Text(
@@ -297,6 +331,37 @@ fun SettingsScreen(
 
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
+    }
+
+    importPreview?.let { preview ->
+        AlertDialog(
+            onDismissRequest = { importPreview = null },
+            title = { Text("Pratinjau impor prospek") },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text("Siap diimpor: ${preview.valid.size} prospek")
+                    if (preview.duplicates.isNotEmpty()) Text("Duplikat dilewati: ${preview.duplicates.size}", color = MaterialTheme.colorScheme.tertiary)
+                    if (preview.errors.isNotEmpty()) Text("Baris bermasalah: ${preview.errors.size}", color = MaterialTheme.colorScheme.error)
+                    preview.valid.take(8).forEach { Text("• ${it.nama}${it.nomorTelepon?.let { phone -> " · $phone" } ?: ""}") }
+                    if (preview.valid.size > 8) Text("dan ${preview.valid.size - 8} prospek lainnya...")
+                    preview.errors.take(5).forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            dismissButton = { TextButton(onClick = { importPreview = null }) { Text("Batal") } },
+            confirmButton = {
+                TextButton(
+                    enabled = preview.valid.isNotEmpty() && !isBusy,
+                    onClick = {
+                        onImportProspek(preview.valid)
+                        status = "${preview.valid.size} prospek berhasil diimpor."
+                        importPreview = null
+                    },
+                ) { Text("Impor") }
+            },
+        )
     }
 
     if (showBackupPinDialog) {

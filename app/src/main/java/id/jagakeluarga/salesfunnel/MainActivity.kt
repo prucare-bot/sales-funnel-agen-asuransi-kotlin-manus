@@ -186,6 +186,7 @@ class MainActivity : FragmentActivity() {
                                         .apply()
                                 },
                                 onDatabaseRestored = viewModel::reloadAfterRestore,
+                                onImportProspek = { prospekListBaru -> prospekListBaru.forEach(viewModel::saveProspek) },
                             )
                         }
                     }
