@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import java.text.SimpleDateFormat
@@ -44,9 +45,18 @@ fun NasabahScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("Belum ada data nasabah.", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Belum ada data nasabah.",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Spacer(Modifier.height(8.dp))
-                Text("Tambahkan nasabah untuk menyimpan data polis dan ulang tahun.")
+                Text(
+                    "Tambahkan nasabah untuk menyimpan data polis dan ulang tahun.",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = { editingNasabah = null; showDialog = true }) {
                     Icon(Icons.Filled.Add, contentDescription = null)
