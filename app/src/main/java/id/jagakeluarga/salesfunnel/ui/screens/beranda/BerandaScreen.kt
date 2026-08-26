@@ -73,7 +73,8 @@ fun BerandaScreen(
 
     val grouped = TahapPipeline.entries.associateWith { tahap -> prospekInsight.count { it.tahap == tahap } }
     val maxJumlah = (grouped.values.maxOrNull() ?: 0).coerceAtLeast(1)
-    val totalProspek = prospekInsight.size.coerceAtLeast(1)
+    val totalProspekAktual = prospekInsight.size
+    val totalProspek = totalProspekAktual.coerceAtLeast(1)
     val closingBulanIni = prospekList.count { prospek ->
         prospek.tahap == TahapPipeline.CLOSING && isBulanSama(prospek.diperbaruiPada, System.currentTimeMillis())
     }
@@ -81,6 +82,15 @@ fun BerandaScreen(
         .filter { it.tahap == TahapPipeline.CLOSING && isBulanSama(it.diperbaruiPada, System.currentTimeMillis()) }
         .sumOf { it.estimasiPremi ?: 0L }
     val totalProspekAktif = prospekInsight.count { it.tahap != TahapPipeline.CLOSING }
+    val closingInsight = prospekInsight.count { it.tahap == TahapPipeline.CLOSING }
+    val rasioClosing = if (totalProspekAktual > 0) closingInsight * 100 / totalProspekAktual else 0
+    val awalTujuhHari = sekarang - 7L * 24 * 60 * 60 * 1000
+    val awalEmpatBelasHari = sekarang - 14L * 24 * 60 * 60 * 1000
+    val prospekTujuhHari = prospekList.count { it.dibuatPada >= awalTujuhHari }
+    val prospekTujuhHariSebelumnya = prospekList.count {
+        it.dibuatPada in awalEmpatBelasHari until awalTujuhHari
+    }
+    val trenProspek = prospekTujuhHari - prospekTujuhHariSebelumnya
 
     Scaffold { padding ->
         Column(
@@ -130,6 +140,15 @@ fun BerandaScreen(
                 targetClosing = targetClosing,
                 premiAktual = premiClosingBulanIni,
                 targetPremi = targetPremi,
+            )
+
+            SalesPerformanceCard(
+                totalPipeline = totalProspekAktual,
+                closingPeriode = closingInsight,
+                rasioClosing = rasioClosing,
+                premiClosing = premiClosingBulanIni,
+                prospekTujuhHari = prospekTujuhHari,
+                trenProspek = trenProspek,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -227,6 +246,43 @@ private fun TargetProgressCard(
             Text("Estimasi premi: Rp ${"%,d".format(premiAktual).replace(',', '.')} / Rp ${"%,d".format(targetPremi).replace(',', '.')}")
             LinearProgressIndicator(progress = { premiProgress }, modifier = Modifier.fillMaxWidth())
         }
+    }
+}
+
+@Composable
+private fun SalesPerformanceCard(
+    totalPipeline: Int,
+    closingPeriode: Int,
+    rasioClosing: Int,
+    premiClosing: Long,
+    prospekTujuhHari: Int,
+    trenProspek: Int,
+) {
+    val trenLabel = when {
+        trenProspek > 0 -> "naik ${trenProspek} dibanding 7 hari sebelumnya"
+        trenProspek < 0 -> "turun ${-trenProspek} dibanding 7 hari sebelumnya"
+        else -> "sama dengan 7 hari sebelumnya"
+    }
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Performa Penjualan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                PerformanceMetric("Pipeline", totalPipeline.toString())
+                PerformanceMetric("Closing", closingPeriode.toString())
+                PerformanceMetric("Rasio closing", "$rasioClosing%")
+            }
+            HorizontalDivider()
+            Text("Estimasi premi closing bulan ini: Rp ${"%,d".format(premiClosing).replace(',', '.')}")
+            Text("Tren prospek 7 hari: $prospekTujuhHari ($trenLabel)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun PerformanceMetric(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 80.dp)) {
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 
