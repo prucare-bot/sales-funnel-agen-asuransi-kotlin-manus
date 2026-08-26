@@ -1,6 +1,7 @@
 package id.jagakeluarga.salesfunnel.backup
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import id.jagakeluarga.salesfunnel.data.AppDatabase
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +9,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 object LocalBackupManager {
+    fun latestAutomaticBackup(context: Context): File? =
+        File(context.filesDir, "automatic_backups")
+            .listFiles { file -> file.isFile && file.name.startsWith("sales_funnel_auto_") && file.extension == "db" }
+            ?.maxByOrNull { it.lastModified() }
+
     suspend fun exportDatabase(resolver: ContentResolver, databaseFile: File, destination: Uri) = withContext(Dispatchers.IO) {
         AppDatabase.checkpoint()
         check(databaseFile.exists() && databaseFile.length() > 0L) { "File database belum tersedia" }

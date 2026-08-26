@@ -60,6 +60,7 @@ fun SettingsScreen(
     var pinInput by remember { mutableStateOf("") }
     var lockEnabled by remember { mutableStateOf(AppLockManager.isEnabled(context)) }
     val driveReady = account?.let(manager::hasDrivePermission) == true
+    val latestAutomaticBackup = remember { LocalBackupManager.latestAutomaticBackup(context) }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -276,9 +277,16 @@ fun SettingsScreen(
 
             Text("Backup lokal", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Simpan file backup ke memori HP, kartu SD, atau folder cloud yang dipilih melalui pemilih file Android.",
+                "Backup lokal otomatis berjalan sekitar sekali sehari saat baterai tidak lemah. Backup manual tetap dapat disimpan ke memori HP, kartu SD, atau folder cloud melalui pemilih file Android.",
                 style = MaterialTheme.typography.bodySmall,
             )
+            latestAutomaticBackup?.let { backup ->
+                val fmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                Text(
+                    "Backup otomatis terakhir: ${fmt.format(Date(backup.lastModified()))} (${backup.length() / 1024} KB)",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } ?: Text("Backup otomatis belum pernah berhasil dibuat.", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     enabled = !isBusy,

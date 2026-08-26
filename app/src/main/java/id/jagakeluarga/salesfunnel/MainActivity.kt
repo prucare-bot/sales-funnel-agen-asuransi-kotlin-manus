@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import id.jagakeluarga.salesfunnel.backup.LocalBackupScheduler
 import id.jagakeluarga.salesfunnel.notification.AgendaReminderWorker
 import id.jagakeluarga.salesfunnel.security.AppLockGate
 import id.jagakeluarga.salesfunnel.ui.AppViewModel
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        LocalBackupScheduler.schedule(this)
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
             var current by remember {
