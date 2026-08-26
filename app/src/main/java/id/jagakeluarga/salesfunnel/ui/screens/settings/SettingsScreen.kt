@@ -7,6 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Person
@@ -53,6 +56,16 @@ fun SettingsScreen(
     var pinInput by remember { mutableStateOf("") }
     var lockEnabled by remember { mutableStateOf(AppLockManager.isEnabled(context)) }
     val latestAutomaticBackup = remember { LocalBackupManager.latestAutomaticBackup(context) }
+    val usernameFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var requestUsernameFocus by remember { mutableStateOf(false) }
+
+    LaunchedEffect(requestUsernameFocus) {
+        if (requestUsernameFocus) {
+            usernameFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -144,7 +157,10 @@ fun SettingsScreen(
                         leadingContent = { Icon(Icons.Filled.Edit, contentDescription = null) },
                         headlineContent = { Text("Change user name") },
                         supportingContent = { Text("Nama yang tampil di dashboard") },
-                        modifier = Modifier.clickable { status = "Silakan ubah nama pada kolom Profil User." },
+                        modifier = Modifier.clickable {
+                            requestUsernameFocus = true
+                            status = null
+                        },
                     )
                 }
             }
@@ -168,7 +184,7 @@ fun SettingsScreen(
                 onValueChange = { namaUser = it },
                 label = { Text("Nama user") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().focusRequester(usernameFocusRequester),
             )
             Button(
                 enabled = namaUser.isNotBlank(),
@@ -176,7 +192,7 @@ fun SettingsScreen(
                     val nama = namaUser.trim()
                     preferences.edit().putString("nama_user", nama).apply()
                     onNamaUserChanged(nama)
-                    status = "Nama user berhasil disimpan."
+                    status = "nama pengguna sudah diganti."
                 },
             ) { Text("Simpan nama user") }
 
