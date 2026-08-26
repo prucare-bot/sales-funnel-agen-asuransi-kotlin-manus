@@ -55,7 +55,6 @@ fun AdaptiveScaffold(
     current: Destination,
     onNavigate: (Destination) -> Unit,
     onQuickSearch: () -> Unit = {},
-    headerSubtitle: String = "",
     content: @Composable (Destination) -> Unit,
 ) {
     val useRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
@@ -95,7 +94,7 @@ fun AdaptiveScaffold(
                 }
             }
             Column(Modifier.fillMaxSize()) {
-                GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch)
+                GlobalHeader(current, onNavigate, onQuickSearch)
                 Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).weight(1f).fillMaxSize()) {
                     AnimatedMenuContent(current, "menu_transition_rail", content)
                 }
@@ -103,7 +102,7 @@ fun AdaptiveScaffold(
         }
     } else {
         Scaffold(
-            topBar = { GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch) },
+            topBar = { GlobalHeader(current, onNavigate, onQuickSearch) },
             bottomBar = { CozyBottomBar(current, onNavigate, tabDestinations) },
         ) { padding ->
             Box(Modifier.padding(padding).fillMaxSize()) {
@@ -178,7 +177,6 @@ private fun CozyBottomBar(
 @Composable
 private fun GlobalHeader(
     current: Destination,
-    headerSubtitle: String,
     onNavigate: (Destination) -> Unit,
     onQuickSearch: () -> Unit,
 ) {
@@ -201,7 +199,7 @@ private fun GlobalHeader(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 )
                 Text(
-                    if (headerSubtitle.isBlank()) current.label else "${current.label} · $headerSubtitle",
+                    current.label,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
