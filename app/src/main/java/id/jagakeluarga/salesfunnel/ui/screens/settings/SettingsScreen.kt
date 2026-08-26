@@ -1,6 +1,5 @@
 package id.jagakeluarga.salesfunnel.ui.screens.settings
 
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -16,9 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
-import id.jagakeluarga.salesfunnel.backup.GoogleDriveBackupManager
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
@@ -45,21 +41,17 @@ fun SettingsScreen(
     onDatabaseRestored: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val manager = remember { GoogleDriveBackupManager(context) }
     val scope = rememberCoroutineScope()
 
-    var account by remember { mutableStateOf(manager.currentAccount()) }
     var status by remember { mutableStateOf<String?>(null) }
     var isBusy by remember { mutableStateOf(false) }
     val preferences = remember { context.getSharedPreferences("sales_funnel_settings", 0) }
     var namaUser by remember { mutableStateOf(preferences.getString("nama_user", "Densus") ?: "Densus") }
-    var lastBackup by remember { mutableStateOf<Long?>(null) }
     var showBusinessCard by remember { mutableStateOf(false) }
     var targetClosingInput by remember { mutableStateOf(targetClosing.toString()) }
     var targetPremiInput by remember { mutableStateOf(targetPremi.toString()) }
     var pinInput by remember { mutableStateOf("") }
     var lockEnabled by remember { mutableStateOf(AppLockManager.isEnabled(context)) }
-    val driveReady = account?.let(manager::hasDrivePermission) == true
     val latestAutomaticBackup = remember { LocalBackupManager.latestAutomaticBackup(context) }
 
     val localBackupLauncher = rememberLauncherForActivityResult(
@@ -123,29 +115,6 @@ fun SettingsScreen(
                     status = "Ekspor laporan gagal: ${e.message}"
                 } finally { isBusy = false }
             }
-        }
-    }
-
-    val signInLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                account = task.getResult(ApiException::class.java)
-                val signedInAccount = account
-                status = if (signedInAccount != null && manager.hasDrivePermission(signedInAccount)) {
-                    "Berhasil masuk sebagai ${signedInAccount.email}. Akses Google Drive siap digunakan."
-                } else {
-                    "Akun Google berhasil masuk, tetapi izin Drive belum diberikan. Tekan login Google lagi lalu pilih Izinkan."
-                }
-            } catch (e: ApiException) {
-                status = "Gagal masuk Google (kode ${e.statusCode}): ${e.statusMessage ?: "periksa OAuth dan SHA-1 release"}"
-            } catch (e: Exception) {
-                status = "Gagal masuk Google: ${e.message ?: "silakan coba lagi"}"
-            }
-        } else {
-            status = "Login Google dibatalkan atau tidak mendapat izin Drive."
         }
     }
 
@@ -287,95 +256,23 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                 )
             } ?: Text("Backup otomatis belum pernah berhasil dibuat.", style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(
                     enabled = !isBusy,
                     onClick = { localBackupLauncher.launch("sales_funnel_backup.db") },
+                    modifier = Modifier.fillMaxWidth(),
                 ) { Text("Simpan ke perangkat") }
                 OutlinedButton(
                     enabled = !isBusy,
                     onClick = { localRestoreLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*")) },
+                    modifier = Modifier.fillMaxWidth(),
                 ) { Text("Pulihkan file") }
             }
 
-            Text("Backup ke Google Drive", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Data (Pipeline, Prospek, Agenda, Nasabah) tersimpan di HP. " +
-                    "Backup ke Google Drive kamu sendiri (folder tersembunyi, hanya bisa diakses app ini) " +
-                    "supaya tidak hilang kalau ganti HP.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            if (account != null) {
-                Text("Akun Google: ${account?.email}")
-            }
-            if (!driveReady) {
-                Button(
-                    enabled = !isBusy,
-                    onClick = {
-                        status = "Membuka login Google dan permintaan izin Drive..."
-                        runCatching { signInLauncher.launch(manager.signInIntent()) }
-                            .onFailure { status = "Login Google tidak dapat dibuka: ${it.message ?: "silakan coba lagi"}" }
-                    },
-                ) {
-                    Text("Masuk dengan Google & izinkan Drive")
-                }
-            } else {
-                Text("Google Drive terhubung")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        enabled = !isBusy,
-                        onClick = {
-                            isBusy = true
-                            scope.launch {
-                                try {
-                                    val dbFile = java.io.File(dbFilePath)
-                                    val time = manager.backupNow(dbFile)
-                                    lastBackup = time
-                                    status = "Backup berhasil."
-                                } catch (e: Exception) {
-                                    status = "Backup gagal: ${e.message}"
-                                } finally {
-                                    isBusy = false
-                                }
-                            }
-                        },
-                    ) { Text("Backup Sekarang") }
-
-                    OutlinedButton(
-                        enabled = !isBusy,
-                        onClick = {
-                            isBusy = true
-                            scope.launch {
-                                try {
-                                    val dbFile = java.io.File(dbFilePath)
-                                    val found = manager.restoreNow(dbFile)
-                                    if (found) {
-                                        onDatabaseRestored()
-                                    }
-                                    status = if (found) {
-                                        "Database berhasil dipulihkan dari Google Drive dan data sudah dimuat ulang."
-                                    } else {
-                                        "Belum ada backup tersimpan di Drive."
-                                    }
-                                } catch (e: Exception) {
-                                    status = "Gagal memulihkan: ${e.message}"
-                                } finally {
-                                    isBusy = false
-                                }
-                            }
-                        },
-                    ) { Text("Pulihkan dari Drive") }
-                }
-                TextButton(onClick = { manager.signOut(); account = null }) { Text("Keluar") }
-            }
-
             if (isBusy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-
-            lastBackup?.let {
-                val fmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
-                Text("Backup terakhir: ${fmt.format(Date(it))}", style = MaterialTheme.typography.bodySmall)
-            }
 
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
