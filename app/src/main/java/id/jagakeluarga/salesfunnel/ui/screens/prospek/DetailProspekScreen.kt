@@ -423,6 +423,7 @@ private fun TambahFollowUpDialog(
     var jenis by remember { mutableStateOf(JenisAgenda.LAINNYA) }
     var waktuMulai by remember { mutableStateOf(System.currentTimeMillis() + 24 * 60 * 60 * 1000) }
     var reminderOffsetHours by remember { mutableStateOf(24) }
+    var catatan by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var expandedReminder by remember { mutableStateOf(false) }
 
@@ -431,6 +432,11 @@ private fun TambahFollowUpDialog(
         title = { Text("Tambah Follow-up") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Keterangan ini akan tersimpan di Timeline Aktivitas sebagai riwayat follow-up.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 OutlinedTextField(judul, { judul = it }, label = { Text("Judul") }, modifier = Modifier.fillMaxWidth())
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
                     OutlinedTextField(
@@ -446,6 +452,13 @@ private fun TambahFollowUpDialog(
                 DateTimePickerField(
                     selectedMillis = waktuMulai,
                     onSelectedMillisChange = { waktuMulai = it },
+                )
+                OutlinedTextField(
+                    value = catatan,
+                    onValueChange = { catatan = it },
+                    label = { Text("Keterangan follow-up") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
                 )
                 ExposedDropdownMenuBox(expanded = expandedReminder, onExpandedChange = { expandedReminder = it }) {
                     OutlinedTextField(
@@ -472,7 +485,8 @@ private fun TambahFollowUpDialog(
                             jenis = jenis,
                             waktuMulai = waktuMulai,
                             reminderOffsetHours = reminderOffsetHours,
-                        )
+                            catatan = catatan.trim().takeIf { it.isNotBlank() },
+                        ),
                     )
                 }
             }) { Text("Simpan") }

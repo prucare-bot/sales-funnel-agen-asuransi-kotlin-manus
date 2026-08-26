@@ -187,6 +187,7 @@ private fun AgendaDialog(
         mutableStateOf(agendaAwal?.waktuMulai ?: (System.currentTimeMillis() + 24 * 60 * 60 * 1000))
     }
     var reminderOffsetHours by remember(agendaAwal) { mutableStateOf(agendaAwal?.reminderOffsetHours ?: 24) }
+    var catatan by remember(agendaAwal) { mutableStateOf(agendaAwal?.catatan.orEmpty()) }
     var expandedReminder by remember { mutableStateOf(false) }
     var showProspekPicker by remember { mutableStateOf(false) }
     var expandedJenis by remember { mutableStateOf(false) }
@@ -234,6 +235,13 @@ private fun AgendaDialog(
                 DateTimePickerField(
                     selectedMillis = waktuMulai,
                     onSelectedMillisChange = { waktuMulai = it },
+                )
+                OutlinedTextField(
+                    value = catatan,
+                    onValueChange = { catatan = it },
+                    label = { Text("Keterangan follow-up (masuk Timeline Aktivitas)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
                 )
                 ExposedDropdownMenuBox(
                     expanded = expandedReminder,
@@ -295,12 +303,14 @@ private fun AgendaDialog(
                         jenis = jenis,
                         waktuMulai = waktuMulai,
                         reminderOffsetHours = reminderOffsetHours,
+                        catatan = catatan.trim().takeIf { it.isNotBlank() },
                     ) ?: Agenda(
                         prospekId = prospek.id,
                         judul = judul.trim(),
                         jenis = jenis,
                         waktuMulai = waktuMulai,
                         reminderOffsetHours = reminderOffsetHours,
+                        catatan = catatan.trim().takeIf { it.isNotBlank() },
                     )
                     onSimpan(agenda)
                     validationError = null
