@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -15,8 +16,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
@@ -191,14 +195,33 @@ fun SettingsScreen(
 
             Text("Warna Tema", style = MaterialTheme.typography.titleMedium)
             Text("Pilih warna utama aplikasi", style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                 AppThemeColor.entries.forEach { option ->
-                    FilterChip(
-                        selected = selectedTheme == option,
-                        onClick = { onThemeChanged(option) },
-                        label = { Text(option.label) },
-                        modifier = Modifier.weight(1f),
-                    )
+                    val warnaTema = when (option) {
+                        AppThemeColor.HIJAU -> Color(0xFF008577)
+                        AppThemeColor.BIRU -> Color(0xFF1976D2)
+                        AppThemeColor.MERAH -> Color(0xFFC62828)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selectedTheme == option,
+                                onClick = { onThemeChanged(option) },
+                                role = Role.RadioButton,
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = selectedTheme == option, onClick = null)
+                        Icon(
+                            Icons.Filled.Circle,
+                            contentDescription = "Warna tema ${option.label}",
+                            tint = warnaTema,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(option.label, color = warnaTema, style = MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
 
