@@ -1,5 +1,6 @@
 package id.jagakeluarga.salesfunnel.ui.screens.settings
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -60,6 +61,10 @@ fun SettingsScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var requestUsernameFocus by remember { mutableStateOf(false) }
     var usernameSaved by remember { mutableStateOf(false) }
+    var showBackupPinDialog by remember { mutableStateOf(false) }
+    var backupPinInput by remember { mutableStateOf("") }
+    var pendingBackupUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(requestUsernameFocus) {
         if (requestUsernameFocus) {
@@ -72,32 +77,20 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
         if (uri != null) {
-            isBusy = true
-            scope.launch {
-                try {
-                    LocalBackupManager.exportDatabase(context.contentResolver, java.io.File(dbFilePath), uri)
-                    status = "Backup lokal berhasil disimpan."
-                } catch (e: Exception) {
-                    status = "Backup lokal gagal: ${e.message}"
-                } finally { isBusy = false }
-            }
+            pendingBackupUri = uri
+            pendingRestoreUri = null
+            backupPinInput = ""
+            showBackupPinDialog = true
         }
     }
     val localRestoreLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            isBusy = true
-            scope.launch {
-                try {
-                    AppDatabase.closeInstance()
-                    LocalBackupManager.importDatabase(context.contentResolver, uri, java.io.File(dbFilePath))
-                    onDatabaseRestored()
-                    status = "Restore lokal berhasil. Data sudah dimuat ulang."
-                } catch (e: Exception) {
-                    status = "Restore lokal gagal: ${e.message}"
-                } finally { isBusy = false }
-            }
+            pendingRestoreUri = uri
+            pendingBackupUri = null
+            backupPinInput = ""
+            showBackupPinDialog = true
         }
     }
 
@@ -274,7 +267,7 @@ fun SettingsScreen(
 
             Text("Backup lokal", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Backup lokal otomatis berjalan sekitar sekali sehari saat baterai tidak lemah. Backup manual tetap dapat disimpan ke memori HP, kartu SD, atau folder cloud melalui pemilih file Android.",
+                "Backup lokal otomatis berjalan sekitar sekali sehari saat baterai tidak lemah. Backup manual dienkripsi dengan PIN dan dapat disimpan ke memori HP, kartu SD, atau folder cloud melalui pemilih file Android.",
                 style = MaterialTheme.typography.bodySmall,
             )
             latestAutomaticBackup?.let { backup ->
@@ -304,6 +297,66 @@ fun SettingsScreen(
 
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
+    }
+
+    if (showBackupPinDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showBackupPinDialog = false
+                pendingBackupUri = null
+                pendingRestoreUri = null
+            },
+            title = { Text(if (pendingBackupUri != null) "Amankan backup" else "Buka backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Masukkan PIN minimal 4 digit. Gunakan PIN yang sama saat memulihkan backup di perangkat lain.")
+                    OutlinedTextField(
+                        value = backupPinInput,
+                        onValueChange = { backupPinInput = it.filter(Char::isDigit).take(8) },
+                        label = { Text("PIN backup") },
+                        singleLine = true,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showBackupPinDialog = false
+                    pendingBackupUri = null
+                    pendingRestoreUri = null
+                }) { Text("Batal") }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = backupPinInput.length >= 4 && !isBusy,
+                    onClick = {
+                        val pin = backupPinInput
+                        val backupUri = pendingBackupUri
+                        val restoreUri = pendingRestoreUri
+                        showBackupPinDialog = false
+                        pendingBackupUri = null
+                        pendingRestoreUri = null
+                        isBusy = true
+                        scope.launch {
+                            try {
+                                if (backupUri != null) {
+                                    LocalBackupManager.exportDatabase(context.contentResolver, java.io.File(dbFilePath), backupUri, pin)
+                                    status = "Backup lokal terenkripsi berhasil disimpan."
+                                } else if (restoreUri != null) {
+                                    AppDatabase.closeInstance()
+                                    LocalBackupManager.importDatabase(context.contentResolver, restoreUri, java.io.File(dbFilePath), pin)
+                                    onDatabaseRestored()
+                                    status = "Restore lokal berhasil. Data sudah dimuat ulang."
+                                }
+                            } catch (e: Exception) {
+                                status = if (restoreUri != null) "Restore lokal gagal: ${e.message}" else "Backup lokal gagal: ${e.message}"
+                            } finally {
+                                isBusy = false
+                            }
+                        }
+                    },
+                ) { Text("Lanjutkan") }
+            },
+        )
     }
 
     if (showBusinessCard) {

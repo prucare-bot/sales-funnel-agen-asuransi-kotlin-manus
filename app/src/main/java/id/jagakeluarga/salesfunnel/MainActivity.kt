@@ -4,7 +4,7 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import id.jagakeluarga.salesfunnel.backup.LocalBackupScheduler
 import id.jagakeluarga.salesfunnel.notification.AgendaReminderWorker
 import id.jagakeluarga.salesfunnel.security.AppLockGate
+import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.ui.AppViewModel
 import id.jagakeluarga.salesfunnel.ui.navigation.AdaptiveScaffold
 import id.jagakeluarga.salesfunnel.ui.navigation.Destination
@@ -33,10 +34,15 @@ import id.jagakeluarga.salesfunnel.ui.screens.settings.SettingsScreen
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import id.jagakeluarga.salesfunnel.ui.theme.SalesFunnelTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val viewModel: AppViewModel by viewModels()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+    override fun onStop() {
+        super.onStop()
+        AppLockManager.markBackground(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LocalBackupScheduler.schedule(this)

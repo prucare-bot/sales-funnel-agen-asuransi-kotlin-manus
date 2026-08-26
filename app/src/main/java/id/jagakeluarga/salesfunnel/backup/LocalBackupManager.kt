@@ -14,20 +14,23 @@ object LocalBackupManager {
             .listFiles { file -> file.isFile && file.name.startsWith("sales_funnel_auto_") && file.extension == "db" }
             ?.maxByOrNull { it.lastModified() }
 
-    suspend fun exportDatabase(resolver: ContentResolver, databaseFile: File, destination: Uri) = withContext(Dispatchers.IO) {
+    suspend fun exportDatabase(resolver: ContentResolver, databaseFile: File, destination: Uri, pin: String) = withContext(Dispatchers.IO) {
         AppDatabase.checkpoint()
         check(databaseFile.exists() && databaseFile.length() > 0L) { "File database belum tersedia" }
+        val plain = databaseFile.readBytes()
+        val encrypted = BackupCrypto.encrypt(plain, pin)
         resolver.openOutputStream(destination)?.use { output ->
-            databaseFile.inputStream().use { input -> input.copyTo(output) }
+            output.write(encrypted)
         } ?: error("Tidak dapat membuka file tujuan")
     }
 
-    suspend fun importDatabase(resolver: ContentResolver, source: Uri, databaseFile: File) = withContext(Dispatchers.IO) {
+    suspend fun importDatabase(resolver: ContentResolver, source: Uri, databaseFile: File, pin: String) = withContext(Dispatchers.IO) {
         val temporary = File(databaseFile.parentFile, "sales_funnel_restore.tmp")
         try {
-            resolver.openInputStream(source)?.use { input ->
-                temporary.outputStream().use { output -> input.copyTo(output) }
-            } ?: error("Tidak dapat membuka file backup")
+            val input = resolver.openInputStream(source)?.use { it.readBytes() }
+                ?: error("Tidak dapat membuka file backup")
+            val plain = if (BackupCrypto.isEncrypted(input)) BackupCrypto.decrypt(input, pin) else input
+            temporary.outputStream().use { output -> output.write(plain) }
             check(temporary.length() > 0L) { "File backup kosong" }
             databaseFile.parentFile?.mkdirs()
             File("${databaseFile.path}-wal").delete()
