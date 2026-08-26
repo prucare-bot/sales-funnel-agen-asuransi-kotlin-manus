@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
@@ -82,7 +84,9 @@ fun ProspekScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Daftar Prospek") }) },
+        topBar = {
+            CenterAlignedTopAppBar(title = { Text("Daftar Prospek") })
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showDialog = true }) {
                 Icon(Icons.Filled.Add, contentDescription = "Tambah prospek")
@@ -287,6 +291,10 @@ fun ProspekDialog(
     val context = LocalContext.current
     var nama by remember { mutableStateOf(initial?.nama ?: "") }
     var telepon by remember { mutableStateOf(initial?.nomorTelepon ?: "") }
+    var kotaDomisili by remember { mutableStateOf(initial?.kotaDomisili ?: "") }
+    var sumberProspek by remember {
+        mutableStateOf(if (initial == null) "Organik" else initial.sumberProspek.orEmpty())
+    }
     var estimasiPremi by remember(initial?.id) { mutableStateOf(initial?.estimasiPremi?.toString().orEmpty()) }
     var tahap by remember { mutableStateOf(initial?.tahap ?: TahapPipeline.PROSPEK) }
     var expanded by remember { mutableStateOf(false) }
@@ -331,11 +339,47 @@ fun ProspekDialog(
                     OutlinedButton(onClick = ::openContactPicker, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Pilih kontak (satu atau banyak)")
+                        Text("Pilih Kontak")
                     }
                 }
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(telepon, { telepon = it }, label = { Text("No HP/WA") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = kotaDomisili,
+                    onValueChange = { kotaDomisili = it },
+                    label = { Text("Kota domisili") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Text("Sumber prospek", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f).selectable(
+                            selected = sumberProspek == "Referensi",
+                            onClick = { sumberProspek = "Referensi" },
+                            role = Role.RadioButton,
+                        ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = sumberProspek == "Referensi", onClick = null)
+                        Text("Referensi")
+                    }
+                    Row(
+                        modifier = Modifier.weight(1f).selectable(
+                            selected = sumberProspek == "Organik",
+                            onClick = { sumberProspek = "Organik" },
+                            role = Role.RadioButton,
+                        ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = sumberProspek == "Organik", onClick = null)
+                        Text("Organik")
+                    }
+                }
                 OutlinedTextField(
                     value = estimasiPremi,
                     onValueChange = { estimasiPremi = it.filter(Char::isDigit) },
@@ -367,6 +411,8 @@ fun ProspekDialog(
                         (initial ?: Prospek(nama = nama)).copy(
                             nama = nama,
                             nomorTelepon = telepon.ifBlank { null },
+                            kotaDomisili = kotaDomisili.trim().ifBlank { null },
+                            sumberProspek = sumberProspek.trim().ifBlank { null },
                             estimasiPremi = estimasiPremi.toLongOrNull(),
                             tahap = tahap,
                             diperbaruiPada = System.currentTimeMillis(),

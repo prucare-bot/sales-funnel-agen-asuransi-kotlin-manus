@@ -20,7 +20,7 @@ import id.jagakeluarga.salesfunnel.data.entity.ProspekAktivitas
 
 @Database(
     entities = [Prospek::class, Agenda::class, Nasabah::class, ProspekStatusHistory::class, ProspekAktivitas::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -41,6 +41,12 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE nasabah ADD COLUMN tanggalLahir INTEGER")
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE prospek ADD COLUMN kotaDomisili TEXT")
             }
         }
 
@@ -91,7 +97,13 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "sales_funnel.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
+                ).addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                ).build().also { instance = it }
             }
 
         /** Flushes Room's WAL so file-based backups include the latest committed rows. */

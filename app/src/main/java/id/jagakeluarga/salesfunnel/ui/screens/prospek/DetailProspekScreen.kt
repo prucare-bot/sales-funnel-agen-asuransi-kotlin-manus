@@ -106,6 +106,10 @@ fun DetailProspekScreen(
                 AssistChip(onClick = {}, label = { Text(prospek.tahap.label) })
             }
 
+            prospek.kotaDomisili?.takeIf { it.isNotBlank() }?.let {
+                Text("Kota domisili: $it", style = MaterialTheme.typography.bodyMedium)
+            }
+
             if (!prospek.nomorTelepon.isNullOrBlank()) {
                 ElevatedCard(
                     onClick = {

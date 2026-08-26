@@ -28,7 +28,9 @@ fun NasabahScreen(
     var editingNasabah by remember { mutableStateOf<Nasabah?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Nasabah") }) },
+        topBar = {
+            CenterAlignedTopAppBar(title = { Text("Nasabah") })
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 editingNasabah = null

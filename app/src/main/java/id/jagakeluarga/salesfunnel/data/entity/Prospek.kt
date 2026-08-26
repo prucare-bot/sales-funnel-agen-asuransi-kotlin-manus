@@ -18,6 +18,7 @@ data class Prospek(
     val nama: String,
     val nomorTelepon: String? = null,
     val email: String? = null,
+    val kotaDomisili: String? = null,
     val sumberProspek: String? = null,
     val tahap: TahapPipeline = TahapPipeline.PROSPEK,
     val estimasiPremi: Long? = null,
