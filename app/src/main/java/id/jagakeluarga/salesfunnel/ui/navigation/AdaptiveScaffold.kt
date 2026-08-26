@@ -96,7 +96,7 @@ fun AdaptiveScaffold(
             }
             Column(Modifier.fillMaxSize()) {
                 GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch)
-                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).weight(1f)) {
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).weight(1f).fillMaxSize()) {
                     AnimatedMenuContent(current, "menu_transition_rail", content)
                 }
             }
@@ -106,7 +106,7 @@ fun AdaptiveScaffold(
             topBar = { GlobalHeader(current, headerSubtitle, onNavigate, onQuickSearch) },
             bottomBar = { CozyBottomBar(current, onNavigate, tabDestinations) },
         ) { padding ->
-            Box(Modifier.padding(padding)) {
+            Box(Modifier.padding(padding).fillMaxSize()) {
                 AnimatedMenuContent(current, "menu_transition_bottom", content)
             }
         }
