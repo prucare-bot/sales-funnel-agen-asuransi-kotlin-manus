@@ -103,10 +103,7 @@ fun DetailProspekScreen(
                     Text(inisial, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(prospek.nama, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    AssistChip(onClick = {}, label = { Text(prospek.tahap.label) })
-                }
+                AssistChip(onClick = {}, label = { Text(prospek.tahap.label) })
             }
 
             if (!prospek.nomorTelepon.isNullOrBlank()) {
