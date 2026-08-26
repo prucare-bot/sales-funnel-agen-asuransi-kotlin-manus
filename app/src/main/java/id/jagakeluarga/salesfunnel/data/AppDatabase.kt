@@ -11,14 +11,16 @@ import id.jagakeluarga.salesfunnel.data.dao.AgendaDao
 import id.jagakeluarga.salesfunnel.data.dao.NasabahDao
 import id.jagakeluarga.salesfunnel.data.dao.ProspekDao
 import id.jagakeluarga.salesfunnel.data.dao.ProspekStatusHistoryDao
+import id.jagakeluarga.salesfunnel.data.dao.ProspekAktivitasDao
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory
+import id.jagakeluarga.salesfunnel.data.entity.ProspekAktivitas
 
 @Database(
-    entities = [Prospek::class, Agenda::class, Nasabah::class, ProspekStatusHistory::class],
-    version = 4,
+    entities = [Prospek::class, Agenda::class, Nasabah::class, ProspekStatusHistory::class, ProspekAktivitas::class],
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -27,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun agendaDao(): AgendaDao
     abstract fun nasabahDao(): NasabahDao
     abstract fun prospekStatusHistoryDao(): ProspekStatusHistoryDao
+    abstract fun prospekAktivitasDao(): ProspekAktivitasDao
 
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -38,6 +41,25 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE nasabah ADD COLUMN tanggalLahir INTEGER")
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS prospek_aktivitas (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        prospekId TEXT NOT NULL,
+                        jenis TEXT NOT NULL,
+                        judul TEXT NOT NULL,
+                        catatan TEXT,
+                        dibuatPada INTEGER NOT NULL,
+                        FOREIGN KEY(prospekId) REFERENCES prospek(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_prospek_aktivitas_prospekId ON prospek_aktivitas(prospekId)")
             }
         }
 
@@ -69,7 +91,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "sales_funnel.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
             }
 
         /** Flushes Room's WAL so file-based backups include the latest committed rows. */

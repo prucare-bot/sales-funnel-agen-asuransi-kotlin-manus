@@ -89,14 +89,17 @@ class MainActivity : ComponentActivity() {
                 AppLockGate {
                     if (prospekTerpilih != null) {
                     val riwayatStatus by viewModel.statusHistoryForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
+                    val riwayatAktivitas by viewModel.aktivitasForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
                     DetailProspekScreen(
                         prospek = prospekTerpilih,
                         riwayatAgenda = agendaList.filter { it.prospekId == prospekTerpilih.id },
                         riwayatStatus = riwayatStatus,
+                        riwayatAktivitas = riwayatAktivitas,
                         sudahJadiNasabah = nasabahList.any { it.prospekAsalId == prospekTerpilih.id },
                         onKembali = { selectedProspekId = null },
                         onSimpanProspek = viewModel::saveProspek,
                         onHapusProspek = { viewModel.deleteProspek(it) },
+                        onSimpanAktivitas = viewModel::saveAktivitas,
                         onKonversiNasabah = { prospek, produk, nomorPolis, onResult ->
                             viewModel.convertProspekToNasabah(prospek, produk, nomorPolis) { result ->
                                 val message = when (result) {

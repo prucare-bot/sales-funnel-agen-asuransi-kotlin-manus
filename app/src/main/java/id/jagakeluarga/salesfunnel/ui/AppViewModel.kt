@@ -7,6 +7,7 @@ import id.jagakeluarga.salesfunnel.data.AppDatabase
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.data.entity.ProspekAktivitas
 import id.jagakeluarga.salesfunnel.data.repository.SalesFunnelRepository
 import id.jagakeluarga.salesfunnel.notification.AgendaScheduler
 import id.jagakeluarga.salesfunnel.notification.BirthdayReminderScheduler
@@ -64,6 +65,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun statusHistoryForProspek(prospekId: String) = repository.statusHistoryForProspek(prospekId)
+    fun aktivitasForProspek(prospekId: String) = repository.aktivitasForProspek(prospekId)
+
+    fun saveAktivitas(aktivitas: ProspekAktivitas) = viewModelScope.launch {
+        runCatching { repository.saveAktivitas(aktivitas) }
+            .onFailure { reportError("Aktivitas gagal disimpan", it) }
+    }
 
     fun convertProspekToNasabah(
         prospek: Prospek,

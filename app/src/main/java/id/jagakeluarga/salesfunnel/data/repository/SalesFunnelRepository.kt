@@ -5,6 +5,7 @@ import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory
+import id.jagakeluarga.salesfunnel.data.entity.ProspekAktivitas
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
@@ -20,19 +21,33 @@ class SalesFunnelRepository(private val db: AppDatabase) {
         val sebelumnya = db.prospekDao().getById(prospek.id)
         db.prospekDao().upsert(prospek)
         if (sebelumnya == null || sebelumnya.tahap != prospek.tahap) {
-            db.prospekStatusHistoryDao().insert(
-                ProspekStatusHistory(prospekId = prospek.id, tahap = prospek.tahap),
-            )
+                db.prospekStatusHistoryDao().insert(
+                    ProspekStatusHistory(prospekId = prospek.id, tahap = prospek.tahap),
+                )
+                db.prospekAktivitasDao().insert(
+                    ProspekAktivitas(
+                        prospekId = prospek.id,
+                        jenis = "STATUS",
+                        judul = if (sebelumnya == null) "Prospek dibuat" else "Tahap berubah menjadi ${prospek.tahap.label}",
+                        catatan = prospek.catatan,
+                    ),
+                )
         }
     }
 
     suspend fun deleteProspek(prospek: Prospek) = db.withTransaction {
         db.prospekStatusHistoryDao().deleteByProspek(prospek.id)
+        db.prospekAktivitasDao().deleteByProspek(prospek.id)
         db.prospekDao().delete(prospek)
     }
 
     fun statusHistoryForProspek(prospekId: String): Flow<List<ProspekStatusHistory>> =
         db.prospekStatusHistoryDao().observeByProspek(prospekId)
+
+    fun aktivitasForProspek(prospekId: String): Flow<List<ProspekAktivitas>> =
+        db.prospekAktivitasDao().observeByProspek(prospekId)
+
+    suspend fun saveAktivitas(aktivitas: ProspekAktivitas) = db.prospekAktivitasDao().insert(aktivitas)
 
     suspend fun convertProspekToNasabah(prospek: Prospek, produk: String, nomorPolis: String?): ConversionResult =
         db.withTransaction {
@@ -71,6 +86,14 @@ class SalesFunnelRepository(private val db: AppDatabase) {
                 db.prospekStatusHistoryDao().insert(
                     ProspekStatusHistory(prospekId = prospek.id, tahap = closingProspek.tahap),
                 )
+                db.prospekAktivitasDao().insert(
+                    ProspekAktivitas(
+                        prospekId = prospek.id,
+                        jenis = "KONVERSI",
+                        judul = "Prospek dikonversi menjadi nasabah",
+                        catatan = "Produk: ${produk.trim()}",
+                    ),
+                )
             }
             ConversionResult.Created(nasabah)
         }
@@ -83,7 +106,21 @@ class SalesFunnelRepository(private val db: AppDatabase) {
 
     fun agendaForProspek(prospekId: String): Flow<List<Agenda>> =
         db.agendaDao().observeByProspek(prospekId)
-    suspend fun saveAgenda(agenda: Agenda) = db.agendaDao().upsert(agenda)
+    suspend fun saveAgenda(agenda: Agenda) = db.withTransaction {
+        val sebelumnya = db.agendaDao().getById(agenda.id)
+        db.agendaDao().upsert(agenda)
+        if (sebelumnya == null) {
+            db.prospekAktivitasDao().insert(
+                ProspekAktivitas(
+                    prospekId = agenda.prospekId,
+                    jenis = "FOLLOW_UP",
+                    judul = "Follow-up: ${agenda.judul}",
+                    catatan = agenda.catatan,
+                    dibuatPada = agenda.waktuMulai,
+                ),
+            )
+        }
+    }
     suspend fun deleteAgenda(agenda: Agenda) = db.agendaDao().delete(agenda)
 
     suspend fun getNasabah(id: String) = db.nasabahDao().getById(id)

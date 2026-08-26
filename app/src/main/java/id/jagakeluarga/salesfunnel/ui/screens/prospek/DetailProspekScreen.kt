@@ -27,6 +27,7 @@ import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.JenisAgenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory
+import id.jagakeluarga.salesfunnel.data.entity.ProspekAktivitas
 import id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField
 import id.jagakeluarga.salesfunnel.ui.common.warnaTahap
 import java.text.SimpleDateFormat
@@ -37,10 +38,12 @@ fun DetailProspekScreen(
     prospek: Prospek,
     riwayatAgenda: List<Agenda>,
     riwayatStatus: List<ProspekStatusHistory> = emptyList(),
+    riwayatAktivitas: List<ProspekAktivitas> = emptyList(),
     sudahJadiNasabah: Boolean = false,
     onKembali: () -> Unit,
     onSimpanProspek: (Prospek) -> Unit,
     onHapusProspek: (Prospek) -> Unit,
+    onSimpanAktivitas: (ProspekAktivitas) -> Unit = {},
     onKonversiNasabah: (Prospek, String, String?, (String) -> Unit) -> Unit = { _, _, _, _ -> },
     onSimpanAgenda: (Agenda) -> Unit,
     onToggleSelesai: (Agenda) -> Unit,
@@ -50,6 +53,7 @@ fun DetailProspekScreen(
     var showHapusConfirm by remember { mutableStateOf(false) }
     var showTambahAgenda by remember { mutableStateOf(false) }
     var showKonversiDialog by remember { mutableStateOf(false) }
+    var showAktivitasDialog by remember { mutableStateOf(false) }
     var conversionMessage by remember { mutableStateOf<String?>(null) }
     val warna = warnaTahap(prospek.tahap)
 
@@ -137,6 +141,37 @@ fun DetailProspekScreen(
 
             HorizontalDivider()
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Timeline Aktivitas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                OutlinedButton(onClick = { showAktivitasDialog = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Tambah")
+                }
+            }
+            if (riwayatAktivitas.isEmpty()) {
+                Text(
+                    "Belum ada aktivitas manual. Perubahan tahap dan follow-up baru akan tercatat otomatis.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val aktivitasFmt = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+                riwayatAktivitas.sortedByDescending { it.dibuatPada }.forEach { aktivitas ->
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(aktivitas.judul, fontWeight = FontWeight.SemiBold)
+                            Text("${aktivitas.jenis.replace('_', ' ')} · ${aktivitasFmt.format(Date(aktivitas.dibuatPada))}", style = MaterialTheme.typography.labelMedium, color = warna)
+                            aktivitas.catatan?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                        }
+                    }
+                }
+            }
+
             Text("Riwayat Tahap Funnel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (riwayatStatus.isEmpty()) {
                 Text(
@@ -178,6 +213,17 @@ fun DetailProspekScreen(
                 }
             }
         }
+    }
+
+    if (showAktivitasDialog) {
+        TambahAktivitasDialog(
+            prospekId = prospek.id,
+            onDismiss = { showAktivitasDialog = false },
+            onSimpan = {
+                onSimpanAktivitas(it)
+                showAktivitasDialog = false
+            },
+        )
     }
 
     if (showKonversiDialog) {
@@ -222,6 +268,75 @@ fun DetailProspekScreen(
             },
         )
     }
+}
+
+@Composable
+private fun TambahAktivitasDialog(
+    prospekId: String,
+    onDismiss: () -> Unit,
+    onSimpan: (ProspekAktivitas) -> Unit,
+) {
+    var jenis by remember { mutableStateOf("CATATAN") }
+    var judul by remember { mutableStateOf("") }
+    var catatan by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    val jenisAktivitas = listOf("TELEPON", "PERTEMUAN", "FOLLOW_UP", "CATATAN", "LAINNYA")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tambah Aktivitas") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                    OutlinedTextField(
+                        value = jenis.replace('_', ' '),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Jenis aktivitas") },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        jenisAktivitas.forEach { pilihan ->
+                            DropdownMenuItem(
+                                text = { Text(pilihan.replace('_', ' ')) },
+                                onClick = { jenis = pilihan; expanded = false },
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = judul,
+                    onValueChange = { judul = it },
+                    label = { Text("Judul aktivitas") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = catatan,
+                    onValueChange = { catatan = it },
+                    label = { Text("Catatan (opsional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = judul.isNotBlank(),
+                onClick = {
+                    onSimpan(
+                        ProspekAktivitas(
+                            prospekId = prospekId,
+                            jenis = jenis,
+                            judul = judul.trim(),
+                            catatan = catatan.trim().takeIf { it.isNotBlank() },
+                        ),
+                    )
+                },
+            ) { Text("Simpan") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
+    )
 }
 
 @Composable
