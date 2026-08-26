@@ -37,12 +37,12 @@ import id.jagakeluarga.salesfunnel.ui.theme.SalesFunnelTheme
 class MainActivity : FragmentActivity() {
     private val viewModel: AppViewModel by viewModels()
 
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onStop() {
         super.onStop()
         AppLockManager.markBackground(this)
     }
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LocalBackupScheduler.schedule(this)
