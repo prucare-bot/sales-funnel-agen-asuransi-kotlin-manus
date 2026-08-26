@@ -59,6 +59,7 @@ fun SettingsScreen(
     val usernameFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     var requestUsernameFocus by remember { mutableStateOf(false) }
+    var usernameSaved by remember { mutableStateOf(false) }
 
     LaunchedEffect(requestUsernameFocus) {
         if (requestUsernameFocus) {
@@ -181,7 +182,10 @@ fun SettingsScreen(
             Text("Profil User", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = namaUser,
-                onValueChange = { namaUser = it },
+                onValueChange = {
+                    namaUser = it
+                    usernameSaved = false
+                },
                 label = { Text("Nama user") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().focusRequester(usernameFocusRequester),
@@ -192,9 +196,17 @@ fun SettingsScreen(
                     val nama = namaUser.trim()
                     preferences.edit().putString("nama_user", nama).apply()
                     onNamaUserChanged(nama)
-                    status = "nama pengguna sudah diganti."
+                    usernameSaved = true
+                    status = null
                 },
             ) { Text("Simpan nama user") }
+            if (usernameSaved) {
+                Text(
+                    "nama pengguna sudah diganti.",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
 
             Text("Keamanan Aplikasi", style = MaterialTheme.typography.titleMedium)
             Text("Lindungi data nasabah dengan PIN minimal 4 digit.", style = MaterialTheme.typography.bodySmall)
