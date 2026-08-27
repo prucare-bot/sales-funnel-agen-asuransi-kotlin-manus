@@ -2,20 +2,27 @@ package id.jagakeluarga.salesfunnel.ui.common
 
 import android.content.Context
 import android.provider.ContactsContract
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactPickerDialog(
     context: Context,
@@ -66,55 +73,127 @@ fun ContactPickerDialog(
             it.nama.lowercase().contains(normalized) || it.nomorTelepon.orEmpty().contains(normalized)
         }
     }
+    val allVisibleSelected = filtered.isNotEmpty() && filtered.all { it.id in selectedIds }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Pilih Kontak") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    label = { Text("Cari nama atau No HP/WA") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 24.dp),
+        ) {
+            Text(
+                "Impor kontak",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Pilih kontak yang ingin dimasukkan sebagai prospek.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Cari kontak") },
+                placeholder = { Text("Cari nama atau nomor") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (allVisibleSelected) {
+                            selectedIds.removeAll(filtered.map { it.id }.toSet())
+                        } else {
+                            filtered.forEach { if (it.id !in selectedIds) selectedIds.add(it.id) }
+                        }
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    if (allVisibleSelected) "Batalkan semua terlihat" else "Pilih semua terlihat",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    "Pilih satu atau beberapa kontak sekaligus.",
-                    style = MaterialTheme.typography.bodySmall,
+                    "${selectedIds.size} dipilih",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                if (filtered.isEmpty()) {
-                    Text("Kontak tidak ditemukan.", style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+            }
+            Spacer(Modifier.height(8.dp))
+            Button(
+                enabled = selectedIds.isNotEmpty(),
+                onClick = { onSelected(contacts.filter { it.id in selectedIds }) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Tambah ${selectedIds.size} ke prospek")
+            }
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(4.dp))
+
+            when {
+                contacts.isEmpty() -> {
+                    Text(
+                        "Memuat kontak…",
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                filtered.isEmpty() -> {
+                    Text(
+                        "Kontak tidak ditemukan.",
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp),
+                    ) {
                         items(filtered, key = { it.id }) { contact ->
                             val checked = contact.id in selectedIds
-                            ListItem(
-                                leadingContent = { Icon(Icons.Filled.Contacts, contentDescription = null) },
-                                headlineContent = { Text(contact.nama) },
-                                supportingContent = { Text(contact.nomorTelepon.orEmpty()) },
-                                trailingContent = {
-                                    Checkbox(
-                                        checked = checked,
-                                        onCheckedChange = {
-                                            if (it) selectedIds.add(contact.id) else selectedIds.remove(contact.id)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = checked,
+                                        onClick = {
+                                            if (checked) selectedIds.remove(contact.id) else selectedIds.add(contact.id)
                                         },
+                                        role = Role.Checkbox,
                                     )
-                                },
-                            )
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Checkbox(checked = checked, onCheckedChange = null)
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(contact.nama, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        contact.nomorTelepon.orEmpty(),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = selectedIds.isNotEmpty(),
-                onClick = { onSelected(contacts.filter { it.id in selectedIds }) },
-            ) { Text("Import ${selectedIds.size} kontak") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
-    )
+        }
+    }
 }

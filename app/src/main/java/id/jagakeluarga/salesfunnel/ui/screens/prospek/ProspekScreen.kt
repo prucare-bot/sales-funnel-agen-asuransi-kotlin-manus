@@ -330,7 +330,7 @@ fun ProspekDialog(
         )
     }
 
-    AlertDialog(
+    if (!showContactPicker || initial != null) AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "Tambah Prospek" else "Edit Prospek") },
         text = {
