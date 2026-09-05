@@ -87,6 +87,7 @@ fun SalesFunnelTheme(
 ) {
     MaterialTheme(
         colorScheme = appColorScheme(theme),
+        typography = SalesFunnelTypography,
         shapes = Shapes(
             small = RoundedCornerShape(12.dp),
             medium = RoundedCornerShape(20.dp),
