@@ -45,6 +45,17 @@ private fun appColorScheme(theme: AppThemeColor) = when (theme) {
         background = GreenBackground, onBackground = Color(0xFF1E2A28),
         surface = WarmWhite, onSurface = Color(0xFF1E2A28),
         surfaceVariant = Color(0xFFEDE8DA), onSurfaceVariant = Color(0xFF6B7671),
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFF3EFE3),
+        surfaceContainer = Color(0xFFEFEBDD),
+        surfaceContainerHigh = Color(0xFFE9E4D4),
+        surfaceContainerHighest = Color(0xFFE3DDCB),
+        outline = Color(0xFFB8B0A0),
+        outlineVariant = Color(0xFFE6E0D2),
+        inverseSurface = GreenNavyDeep,
+        inverseOnSurface = GreenBackground,
+        inversePrimary = Color(0xFFB9E0D6),
+        scrim = Color(0xFF000000),
     )
     AppThemeColor.BIRU -> lightColorScheme(
         primary = BluePrimary, onPrimary = Color.White,
