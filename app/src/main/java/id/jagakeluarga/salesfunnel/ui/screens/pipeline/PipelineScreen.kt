@@ -1,6 +1,7 @@
 package id.jagakeluarga.salesfunnel.ui.screens.pipeline
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
@@ -152,44 +154,63 @@ private fun ProspekCard(prospek: Prospek, onClick: () -> Unit) {
         .joinToString("") { it.first().uppercase() }
         .ifBlank { "?" }
 
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(warna),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(warna),
-                contentAlignment = androidx.compose.ui.Alignment.Center,
-            ) {
-                Text(inisial, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(prospek.nama, fontWeight = FontWeight.SemiBold)
-                prospek.nomorTelepon?.let { nomor ->
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Phone,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(nomor, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                prospek.estimasiPremi?.let {
-                    Text(
-                        "Est. Rp ${"%,d".format(it).replace(',', '.')}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = warna,
-                        fontWeight = FontWeight.Medium,
+            Text(inisial, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(prospek.nama, fontWeight = FontWeight.SemiBold)
+            prospek.nomorTelepon?.let { nomor ->
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Phone,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Spacer(Modifier.width(4.dp))
+                    Text(nomor, style = MaterialTheme.typography.bodySmall)
                 }
             }
+            prospek.estimasiPremi?.let {
+                Text(
+                    "Est. Rp ${"%,d".format(it).replace(',', '.')}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = warna,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                .background(warna)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(
+                prospek.tahap.label,
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

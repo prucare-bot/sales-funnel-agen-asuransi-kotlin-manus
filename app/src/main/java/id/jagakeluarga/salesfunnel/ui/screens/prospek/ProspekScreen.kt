@@ -113,10 +113,12 @@ fun ProspekScreen(
                     }
                 },
                 singleLine = true,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             )
             OutlinedButton(
                 onClick = { showFilter = true },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
             ) {
                 Icon(Icons.Filled.FilterList, contentDescription = null)
@@ -235,8 +237,8 @@ private fun SwipeableProspekItem(
         modifier = Modifier.clip(MaterialTheme.shapes.medium),
         backgroundContent = {
             val (warna, ikon, alignment) = when (dismissState.dismissDirection) {
-                SwipeToDismissBoxValue.StartToEnd -> Triple(Color(0xFF10B981), Icons.Filled.Phone, Alignment.CenterStart)
-                SwipeToDismissBoxValue.EndToStart -> Triple(Color(0xFFEF4444), Icons.Filled.Delete, Alignment.CenterEnd)
+                SwipeToDismissBoxValue.StartToEnd -> Triple(Color(0xFF3F8F5F), Icons.Filled.Phone, Alignment.CenterStart)
+                SwipeToDismissBoxValue.EndToStart -> Triple(Color(0xFFC1502E), Icons.Filled.Delete, Alignment.CenterEnd)
                 SwipeToDismissBoxValue.Settled -> Triple(Color.Transparent, Icons.Filled.Phone, Alignment.CenterStart)
             }
             Box(
@@ -251,16 +253,37 @@ private fun SwipeableProspekItem(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
         ) {
+            val warnaTahapIni = id.jagakeluarga.salesfunnel.ui.common.warnaTahap(prospek.tahap)
+            val inisial = prospek.nama.trim().split(" ")
+                .filter { it.isNotBlank() }.take(2)
+                .joinToString("") { it.first().uppercase() }
+                .ifBlank { "?" }
             ListItem(
-            headlineContent = { Text(prospek.nama) },
-            supportingContent = { Text("${prospek.tahap.label} · No HP/WA: ${prospek.nomorTelepon ?: "-"}") },
-            trailingContent = {
-                IconButton(
-                    enabled = !prospek.nomorTelepon.isNullOrBlank(),
-                    onClick = { showTemplateDialog = true },
-                ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
-            },
-            modifier = Modifier.clickable(onClick = onKlik),
+                leadingContent = {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(androidx.compose.foundation.shape.CircleShape).background(warnaTahapIni),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(inisial, color = Color.White, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+                },
+                headlineContent = { Text(prospek.nama) },
+                supportingContent = { Text("No HP/WA: ${prospek.nomorTelepon ?: "-"}") },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                .background(warnaTahapIni)
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text(prospek.tahap.label, color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+                        IconButton(
+                            enabled = !prospek.nomorTelepon.isNullOrBlank(),
+                            onClick = { showTemplateDialog = true },
+                        ) { Icon(Icons.Filled.Send, contentDescription = "Kirim WhatsApp") }
+                    }
+                },
+                modifier = Modifier.clickable(onClick = onKlik),
             )
         }
     }
