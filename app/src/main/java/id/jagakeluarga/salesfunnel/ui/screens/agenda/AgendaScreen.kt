@@ -76,58 +76,39 @@ fun AgendaScreen(
                     Text("Tambah agenda")
                 }
             }
-        } else LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(agendaList, key = { it.id }) { agenda ->
-                val namaProspek = prospekList.find { it.id == agenda.prospekId }?.nama ?: "(prospek dihapus)"
-                val terlambat = !agenda.selesai && agenda.waktuMulai < System.currentTimeMillis()
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    ListItem(
-                    leadingContent = {
-                        Checkbox(
-                            checked = agenda.selesai,
-                            onCheckedChange = { onToggleSelesai(agenda) },
-                        )
-                    },
-                    headlineContent = { Text(agenda.judul) },
-                    supportingContent = {
-                        Column {
-                            Text("$namaProspek · ${agenda.jenis.label} · ${fmt.format(Date(agenda.waktuMulai))}")
-                            if (terlambat) {
-                                Text("Terlambat", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
-                            ) {
-                                IconButton(
-                                    enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
-                                    onClick = { templateAgenda = agenda },
-                                ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
-                                IconButton(
-                                    onClick = {
-                                        onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false))
-                                    },
-                                ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
-                                IconButton(onClick = {
-                                    dialogAgenda = agenda
-                                    showDialog = true
-                                }) {
-                                    Icon(Icons.Filled.Edit, contentDescription = "Edit agenda")
-                                }
-                                IconButton(onClick = { onHapus(agenda) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Hapus")
-                                }
-                            }
-                        }
-                    },
-                    )
+        } else {
+            val sekarang = System.currentTimeMillis()
+            val awalHari = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val akhirHari = awalHari + 24 * 60 * 60 * 1000
+            val terlambat = agendaList.filter { !it.selesai && it.waktuMulai < sekarang }.sortedBy { it.waktuMulai }
+            val hariIni = agendaList.filter { it.waktuMulai in awalHari until akhirHari && it.waktuMulai >= sekarang || (it.selesai && it.waktuMulai in awalHari until akhirHari) }
+                .sortedBy { it.waktuMulai }
+            val berikutnya = agendaList.filter { !it.selesai && it.waktuMulai >= akhirHari }.sortedBy { it.waktuMulai }
+
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (terlambat.isNotEmpty()) {
+                    item { AgendaGroupHeader("Terlambat") }
+                    items(terlambat, key = { it.id }) { agenda ->
+                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                    }
+                }
+                if (hariIni.isNotEmpty()) {
+                    item { AgendaGroupHeader("Hari ini") }
+                    items(hariIni, key = { it.id }) { agenda ->
+                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                    }
+                }
+                if (berikutnya.isNotEmpty()) {
+                    item { AgendaGroupHeader("Berikutnya") }
+                    items(berikutnya, key = { it.id }) { agenda ->
+                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                    }
                 }
             }
         }
@@ -162,6 +143,80 @@ fun AgendaScreen(
                 showDialog = false
                 dialogAgenda = null
             },
+        )
+    }
+}
+
+@Composable
+private fun AgendaGroupHeader(title: String) {
+    Text(
+        title,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+    )
+}
+
+/** Baris agenda dengan aksen warna di kiri: merah untuk terlambat, teal untuk yang akan datang. */
+@Composable
+private fun AgendaRow(
+    agenda: Agenda,
+    prospekList: List<Prospek>,
+    fmt: SimpleDateFormat,
+    onToggleSelesai: (Agenda) -> Unit,
+    onSimpan: (Agenda) -> Unit,
+    onEdit: () -> Unit,
+    onHapus: (Agenda) -> Unit,
+    onKirimTemplate: () -> Unit,
+) {
+    val namaProspek = prospekList.find { it.id == agenda.prospekId }?.nama ?: "(prospek dihapus)"
+    val terlambat = !agenda.selesai && agenda.waktuMulai < System.currentTimeMillis()
+    val warnaAksen = if (terlambat) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .fillMaxHeight()
+                .background(warnaAksen),
+        )
+        ListItem(
+            leadingContent = {
+                Checkbox(checked = agenda.selesai, onCheckedChange = { onToggleSelesai(agenda) })
+            },
+            headlineContent = {
+                Text(
+                    agenda.judul,
+                    style = if (agenda.selesai) MaterialTheme.typography.bodyLarge.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough) else MaterialTheme.typography.bodyLarge,
+                    color = if (agenda.selesai) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            supportingContent = {
+                Column {
+                    Text("$namaProspek · ${agenda.jenis.label} · ${fmt.format(Date(agenda.waktuMulai))}")
+                    if (terlambat) {
+                        Text("Terlambat", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        IconButton(
+                            enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
+                            onClick = onKirimTemplate,
+                        ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
+                        IconButton(
+                            onClick = { onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false)) },
+                        ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
+                        IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit agenda") }
+                        IconButton(onClick = { onHapus(agenda) }) { Icon(Icons.Filled.Delete, contentDescription = "Hapus") }
+                    }
+                }
+            },
+            modifier = Modifier.weight(1f),
         )
     }
 }

@@ -1,15 +1,18 @@
 package id.jagakeluarga.salesfunnel.ui.screens.beranda
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.PersonAdd
@@ -17,10 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
@@ -109,7 +112,14 @@ fun BerandaScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            HeroWelcomeCard(sapaan = sapaan, namaAgen = namaAgen)
+            HeroTargetCard(
+                sapaan = sapaan,
+                namaAgen = namaAgen,
+                closingAktual = closingBulanIni,
+                targetClosing = targetClosing,
+                premiAktual = premiClosingBulanIni,
+                targetPremi = targetPremi,
+            )
 
             ExposedDropdownMenuBox(
                 expanded = periodeMenuTerbuka,
@@ -143,11 +153,15 @@ fun BerandaScreen(
                 onTandaiAgendaSelesai = onTandaiAgendaSelesai,
             )
 
-            TargetProgressCard(
-                closingAktual = closingBulanIni,
-                targetClosing = targetClosing,
-                premiAktual = premiClosingBulanIni,
-                targetPremi = targetPremi,
+            StatStrip(
+                items = listOf(
+                    "$totalProspekAktif" to "Prospek aktif",
+                    "$closingBulanIni" to "Closing bulan ini",
+                    "${agendaHariIni.size}" to "Agenda hari ini",
+                    "${nasabahList.size}" to "Total nasabah",
+                    "${agendaTerlambat.size}" to "Agenda terlambat",
+                    "$prospekTanpaFollowUp" to "Tanpa follow-up",
+                ),
             )
 
             SalesPerformanceCard(
@@ -159,24 +173,13 @@ fun BerandaScreen(
                 trenProspek = trenProspek,
             )
 
-            QuickActionsCard(
+            QuickActionsRow(
                 onBukaProspek = onBukaProspek,
                 onBukaAgenda = onBukaAgenda,
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                RingkasanCard(Modifier.weight(1f), "$totalProspekAktif", "Prospek aktif")
-                RingkasanCard(Modifier.weight(1f), "$closingBulanIni", "Closing bulan ini")
-                RingkasanCard(Modifier.weight(1f), "${agendaHariIni.size}", "Agenda hari ini")
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                RingkasanCard(Modifier.weight(1f), "${nasabahList.size}", "Total nasabah")
-                RingkasanCard(Modifier.weight(1f), "${agendaTerlambat.size}", "Agenda terlambat")
-                RingkasanCard(Modifier.weight(1f), "$prospekTanpaFollowUp", "Tanpa follow-up")
-            }
-
             Column {
-                Text("Dashboard Statistik Prospek", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Corong Prospek", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 TahapPipeline.entries.forEach { tahap ->
                     val jumlah = grouped[tahap] ?: 0
@@ -247,46 +250,136 @@ fun BerandaScreen(
     }
 }
 
+/**
+ * Hero gabungan sapaan + progress ring target closing bulan ini.
+ * Redesain 2026: progress ring adalah elemen paling mencolok di layar
+ * (angka yang paling dicari agen tiap pagi), bukan sekadar banner sapaan.
+ * Lihat mockup redesign-semua-layar.html.
+ */
 @Composable
-private fun TargetProgressCard(
+private fun HeroTargetCard(
+    sapaan: String,
+    namaAgen: String,
     closingAktual: Int,
     targetClosing: Int,
     premiAktual: Long,
     targetPremi: Long,
 ) {
+    val colors = MaterialTheme.colorScheme
     val closingProgress = if (targetClosing > 0) (closingAktual.toFloat() / targetClosing).coerceIn(0f, 1f) else 0f
-    val premiProgress = if (targetPremi > 0) (premiAktual.toFloat() / targetPremi).coerceIn(0f, 1f) else 0f
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Pencapaian Bulan Ini", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("Closing: $closingAktual / $targetClosing")
-            LinearProgressIndicator(progress = { closingProgress }, modifier = Modifier.fillMaxWidth())
-            Text("Estimasi premi: Rp ${"%,d".format(premiAktual).replace(',', '.')} / Rp ${"%,d".format(targetPremi).replace(',', '.')}")
-            LinearProgressIndicator(progress = { premiProgress }, modifier = Modifier.fillMaxWidth())
+    val persenTercapai = (closingProgress * 100).toInt()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(colors.surface)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text("$sapaan, $namaAgen", style = MaterialTheme.typography.titleSmall, color = colors.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 10.dp.toPx()
+                    drawArc(
+                        color = colors.surfaceVariant,
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                    drawArc(
+                        color = colors.tertiary,
+                        startAngle = -90f,
+                        sweepAngle = 360f * closingProgress,
+                        useCenter = false,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("$closingAktual/$targetClosing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = colors.primary)
+                    Text("closing", style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Target bulan ini", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Rp ${"%,d".format(premiAktual).replace(',', '.')} / Rp ${"%,d".format(targetPremi).replace(',', '.')}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "$persenTercapai% tercapai · ${(targetClosing - closingAktual).coerceAtLeast(0)} closing lagi",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.primary,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
+/** Baris ringkasan tunggal dengan pembatas tipis, pengganti grid kartu 2x3. */
+@Composable
+private fun StatStrip(items: List<Pair<String, String>>) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(colors.surface)
+            .horizontalScroll(rememberScrollState()),
+    ) {
+        items.forEachIndexed { index, (angka, label) ->
+            Column(
+                modifier = Modifier
+                    .widthIn(min = 92.dp)
+                    .padding(vertical = 14.dp, horizontal = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(angka, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colors.primary)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
+            }
+            if (index < items.size - 1) {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 14.dp)
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(colors.surfaceVariant),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun QuickActionsCard(
+private fun QuickActionsRow(
     onBukaProspek: () -> Unit,
     onBukaAgenda: () -> Unit,
 ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Aksi Cepat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onBukaProspek, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Filled.PersonAdd, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Prospek")
-                }
-                OutlinedButton(onClick = onBukaAgenda, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Filled.CalendarMonth, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Agenda")
-                }
-            }
+    val colors = MaterialTheme.colorScheme
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Button(
+            onClick = onBukaProspek,
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(containerColor = colors.tertiary, contentColor = colors.onTertiary),
+        ) {
+            Icon(Icons.Filled.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Tambah prospek", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        OutlinedButton(
+            onClick = onBukaAgenda,
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(50),
+        ) {
+            Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Buat agenda", maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -373,53 +466,6 @@ private fun FollowUpPrioritySection(
                 "Tidak ada follow-up yang perlu ditindaklanjuti.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun HeroWelcomeCard(sapaan: String, namaAgen: String) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(Brush.horizontalGradient(listOf(colors.primary, colors.secondary)))
-            .padding(20.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(colors.onPrimary.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Home, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(32.dp))
-            }
-            Column {
-                Text(sapaan, style = MaterialTheme.typography.titleMedium, color = colors.onPrimary.copy(alpha = 0.88f))
-                Text(namaAgen, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = colors.onPrimary)
-                Text("Kelola prospek dan agenda Anda hari ini.", style = MaterialTheme.typography.bodySmall, color = colors.onPrimary.copy(alpha = 0.82f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RingkasanCard(modifier: Modifier = Modifier, angka: String, label: String) {
-    ElevatedCard(modifier = modifier) {
-        Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(angka, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(
-                label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
             )
         }
     }

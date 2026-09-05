@@ -1,5 +1,6 @@
 package id.jagakeluarga.salesfunnel.ui.screens.nasabah
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Nasabah
@@ -90,6 +92,7 @@ fun NasabahScreen(
                         }
                     },
                     singleLine = true,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                 )
                 LazyColumn(
@@ -102,11 +105,34 @@ fun NasabahScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                 ) {
+                    val inisial = nasabah.nama.trim().split(" ")
+                        .filter { it.isNotBlank() }.take(2)
+                        .joinToString("") { it.first().uppercase() }
+                        .ifBlank { "?" }
                     ListItem(
+                    leadingContent = {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(inisial, color = androidx.compose.ui.graphics.Color.White, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+                    },
                     headlineContent = { Text(nasabah.nama) },
                     supportingContent = {
                         val lahir = nasabah.tanggalLahir?.let { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(it)) } ?: "Tanggal lahir belum diisi"
-                        Text("${nasabah.produk} · Lahir: $lahir")
+                        Column {
+                            Text("Lahir: $lahir", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "${nasabah.produk}${nasabah.nomorPolis?.let { " · $it" } ?: ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                            )
+                        }
                     },
                     trailingContent = {
                         Row {
