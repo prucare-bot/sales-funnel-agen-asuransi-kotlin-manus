@@ -15,7 +15,7 @@ object AgendaScheduler {
     fun schedule(context: Context, agenda: Agenda) {
         val reminderMillis = agenda.reminderOffsetHours.toLong() * 60 * 60 * 1000
         val delay = agenda.waktuMulai - reminderMillis - System.currentTimeMillis()
-        if (agenda.selesai || delay <= 0) {
+        if (agenda.selesai) {
             cancel(context, agenda.id)
             return
         }
@@ -27,7 +27,7 @@ object AgendaScheduler {
             AgendaReminderWorker.KEY_OFFSET_HOURS to agenda.reminderOffsetHours,
         )
         val request = OneTimeWorkRequestBuilder<AgendaReminderWorker>()
-            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInitialDelay(delay.coerceAtLeast(0L), TimeUnit.MILLISECONDS)
             .setInputData(data)
             .build()
         WorkManager.getInstance(context)

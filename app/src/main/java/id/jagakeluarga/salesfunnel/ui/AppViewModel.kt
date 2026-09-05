@@ -49,6 +49,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
+            repository.agendaList.first().forEach { agenda ->
+                AgendaScheduler.schedule(getApplication(), agenda)
+            }
             repository.nasabahList.first().forEach { nasabah ->
                 BirthdayReminderScheduler.scheduleIfBirthdayToday(getApplication(), nasabah)
             }

@@ -15,15 +15,20 @@ fun ProspekFilterDialog(
     tanggalMulai: Long?,
     tanggalAkhir: Long?,
     tahapAwal: TahapPipeline?,
+    kotaAwal: String?,
+    sumberAwal: String?,
     onDismiss: () -> Unit,
-    onApply: (Long?, Long?, TahapPipeline?) -> Unit,
+    onApply: (Long?, Long?, TahapPipeline?, String?, String?) -> Unit,
 ) {
     var mulai by remember { mutableStateOf(tanggalMulai) }
     var akhir by remember { mutableStateOf(tanggalAkhir) }
     var tahap by remember { mutableStateOf(tahapAwal) }
+    var kota by remember { mutableStateOf(kotaAwal.orEmpty()) }
+    var sumber by remember { mutableStateOf(sumberAwal) }
     var showMulai by remember { mutableStateOf(false) }
     var showAkhir by remember { mutableStateOf(false) }
     var expandedTahap by remember { mutableStateOf(false) }
+    var expandedSumber by remember { mutableStateOf(false) }
     val formatter = remember { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")) }
 
     fun dayStart(millis: Long): Long = Calendar.getInstance().apply {
@@ -63,6 +68,13 @@ fun ProspekFilterDialog(
                 OutlinedButton(onClick = { showAkhir = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(if (akhir == null) "Tanggal akhir" else "Akhir: ${formatter.format(Date(akhir!!))}")
                 }
+                OutlinedTextField(
+                    value = kota,
+                    onValueChange = { kota = it },
+                    label = { Text("Kota domisili") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 ExposedDropdownMenuBox(expanded = expandedTahap, onExpandedChange = { expandedTahap = it }) {
                     OutlinedTextField(
                         value = tahap?.label ?: "Semua status funnel",
@@ -76,9 +88,25 @@ fun ProspekFilterDialog(
                         }
                     }
                 }
+                ExposedDropdownMenuBox(expanded = expandedSumber, onExpandedChange = { expandedSumber = it }) {
+                    OutlinedTextField(
+                        value = sumber ?: "Semua sumber prospek",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Sumber prospek") },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(expanded = expandedSumber, onDismissRequest = { expandedSumber = false }) {
+                        DropdownMenuItem(text = { Text("Semua sumber prospek") }, onClick = { sumber = null; expandedSumber = false })
+                        DropdownMenuItem(text = { Text("Referensi") }, onClick = { sumber = "Referensi"; expandedSumber = false })
+                        DropdownMenuItem(text = { Text("Organik") }, onClick = { sumber = "Organik"; expandedSumber = false })
+                    }
+                }
             }
         },
-        confirmButton = { TextButton(onClick = { onApply(mulai, akhir, tahap) }) { Text("Terapkan") } },
+        confirmButton = {
+            TextButton(onClick = { onApply(mulai, akhir, tahap, kota.trim().takeIf { it.isNotBlank() }, sumber) }) { Text("Terapkan") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
     )
 }

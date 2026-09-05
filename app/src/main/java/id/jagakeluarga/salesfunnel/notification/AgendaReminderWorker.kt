@@ -69,10 +69,11 @@ class AgendaReminderWorker(
             java.text.SimpleDateFormat("dd MMM, HH:mm", java.util.Locale("id", "ID"))
                 .format(java.util.Date(waktuMulai))
         } else "waktu yang telah dijadwalkan"
+        val statusLabel = if (waktuMulai > 0 && waktuMulai < System.currentTimeMillis()) "Terlambat · " else ""
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(judul)
-            .setContentText("$jenis · $waktuLabel · $offsetLabel")
+            .setContentText("$statusLabel$jenis · $waktuLabel · $offsetLabel")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openPendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Tandai selesai", completePendingIntent)

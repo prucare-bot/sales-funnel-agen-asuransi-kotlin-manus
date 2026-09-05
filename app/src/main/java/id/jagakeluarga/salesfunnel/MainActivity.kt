@@ -130,6 +130,7 @@ class MainActivity : FragmentActivity() {
                             Destination.BERANDA -> BerandaScreen(
                                 prospekList = prospekList,
                                 agendaList = agendaList,
+                                nasabahList = nasabahList,
                                 namaAgen = namaAgen,
                                 targetClosing = targetClosing,
                                 targetPremi = targetPremi,

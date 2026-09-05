@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import id.jagakeluarga.salesfunnel.data.entity.Agenda
 import id.jagakeluarga.salesfunnel.data.entity.Prospek
+import id.jagakeluarga.salesfunnel.data.entity.Nasabah
 import id.jagakeluarga.salesfunnel.data.entity.TahapPipeline
 import id.jagakeluarga.salesfunnel.ui.common.warnaTahap
 import java.text.SimpleDateFormat
@@ -34,6 +35,7 @@ import java.util.*
 fun BerandaScreen(
     prospekList: List<Prospek>,
     agendaList: List<Agenda>,
+    nasabahList: List<Nasabah> = emptyList(),
     namaAgen: String = "Densus",
     targetClosing: Int = 10,
     targetPremi: Long = 0L,
@@ -85,6 +87,9 @@ fun BerandaScreen(
         .filter { it.tahap == TahapPipeline.CLOSING && isBulanSama(it.diperbaruiPada, System.currentTimeMillis()) }
         .sumOf { it.estimasiPremi ?: 0L }
     val totalProspekAktif = prospekInsight.count { it.tahap != TahapPipeline.CLOSING }
+    val prospekTanpaFollowUp = prospekList.count { prospek ->
+        prospek.tahap != TahapPipeline.CLOSING && agendaList.none { it.prospekId == prospek.id }
+    }
     val closingInsight = prospekInsight.count { it.tahap == TahapPipeline.CLOSING }
     val rasioClosing = if (totalProspekAktual > 0) closingInsight * 100 / totalProspekAktual else 0
     val awalTujuhHari = sekarang - 7L * 24 * 60 * 60 * 1000
@@ -163,6 +168,11 @@ fun BerandaScreen(
                 RingkasanCard(Modifier.weight(1f), "$totalProspekAktif", "Prospek aktif")
                 RingkasanCard(Modifier.weight(1f), "$closingBulanIni", "Closing bulan ini")
                 RingkasanCard(Modifier.weight(1f), "${agendaHariIni.size}", "Agenda hari ini")
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                RingkasanCard(Modifier.weight(1f), "${nasabahList.size}", "Total nasabah")
+                RingkasanCard(Modifier.weight(1f), "${agendaTerlambat.size}", "Agenda terlambat")
+                RingkasanCard(Modifier.weight(1f), "$prospekTanpaFollowUp", "Tanpa follow-up")
             }
 
             Column {

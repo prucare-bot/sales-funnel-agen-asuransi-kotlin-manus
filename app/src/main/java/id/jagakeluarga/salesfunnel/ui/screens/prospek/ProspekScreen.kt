@@ -53,6 +53,8 @@ fun ProspekScreen(
     var tanggalMulai by remember { mutableStateOf<Long?>(null) }
     var tanggalAkhir by remember { mutableStateOf<Long?>(null) }
     var tahapFilter by remember { mutableStateOf<TahapPipeline?>(null) }
+    var kotaFilter by remember { mutableStateOf<String?>(null) }
+    var sumberFilter by remember { mutableStateOf<String?>(null) }
     var hanyaBelumKonversi by remember { mutableStateOf(false) }
     var hanyaTanpaFollowUp by remember { mutableStateOf(false) }
     var showFilter by remember { mutableStateOf(false) }
@@ -65,6 +67,8 @@ fun ProspekScreen(
         tanggalMulai,
         tanggalAkhir,
         tahapFilter,
+        kotaFilter,
+        sumberFilter,
         hanyaBelumKonversi,
         hanyaTanpaFollowUp,
     ) {
@@ -75,11 +79,13 @@ fun ProspekScreen(
             val cocokMulai = tanggalMulai == null || prospek.dibuatPada >= tanggalMulai!!
             val cocokAkhir = tanggalAkhir == null || prospek.dibuatPada <= tanggalAkhir!!
             val cocokTahap = tahapFilter == null || prospek.tahap == tahapFilter
+            val cocokKota = kotaFilter == null || prospek.kotaDomisili.orEmpty().contains(kotaFilter!!, ignoreCase = true)
+            val cocokSumber = sumberFilter == null || prospek.sumberProspek == sumberFilter
             val sudahDikonversi = nasabahList.any { it.prospekAsalId == prospek.id }
             val punyaFollowUp = agendaList.any { it.prospekId == prospek.id }
             val cocokKonversi = !hanyaBelumKonversi || !sudahDikonversi
             val cocokFollowUp = !hanyaTanpaFollowUp || !punyaFollowUp
-            cocokKataKunci && cocokMulai && cocokAkhir && cocokTahap && cocokKonversi && cocokFollowUp
+            cocokKataKunci && cocokMulai && cocokAkhir && cocokTahap && cocokKota && cocokSumber && cocokKonversi && cocokFollowUp
         }
     }
 
@@ -116,7 +122,7 @@ fun ProspekScreen(
                 Icon(Icons.Filled.FilterList, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (tanggalMulai != null || tanggalAkhir != null || tahapFilter != null || hanyaBelumKonversi || hanyaTanpaFollowUp) "Filter aktif" else "Filter tanggal & status",
+                    if (tanggalMulai != null || tanggalAkhir != null || tahapFilter != null || kotaFilter != null || sumberFilter != null || hanyaBelumKonversi || hanyaTanpaFollowUp) "Filter aktif" else "Filter lanjutan prospek",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -142,7 +148,7 @@ fun ProspekScreen(
             if (hasilFilter.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        if (kataKunci.isBlank() && tanggalMulai == null && tanggalAkhir == null && tahapFilter == null && !hanyaBelumKonversi && !hanyaTanpaFollowUp) "Belum ada prospek" else "Tidak ada prospek yang sesuai filter",
+                        if (kataKunci.isBlank() && tanggalMulai == null && tanggalAkhir == null && tahapFilter == null && kotaFilter == null && sumberFilter == null && !hanyaBelumKonversi && !hanyaTanpaFollowUp) "Belum ada prospek" else "Tidak ada prospek yang sesuai filter",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -170,11 +176,15 @@ fun ProspekScreen(
             tanggalMulai = tanggalMulai,
             tanggalAkhir = tanggalAkhir,
             tahapAwal = tahapFilter,
+            kotaAwal = kotaFilter,
+            sumberAwal = sumberFilter,
             onDismiss = { showFilter = false },
-            onApply = { mulai, akhir, tahap ->
+            onApply = { mulai, akhir, tahap, kota, sumber ->
                 tanggalMulai = mulai
                 tanggalAkhir = akhir
                 tahapFilter = tahap
+                kotaFilter = kota
+                sumberFilter = sumber
                 showFilter = false
             },
         )

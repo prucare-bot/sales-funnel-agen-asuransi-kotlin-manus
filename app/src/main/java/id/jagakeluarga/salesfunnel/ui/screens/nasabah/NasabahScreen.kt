@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +29,15 @@ fun NasabahScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var editingNasabah by remember { mutableStateOf<Nasabah?>(null) }
+    var kataKunci by rememberSaveable { mutableStateOf("") }
+    val hasilFilter = remember(nasabahList, kataKunci) {
+        val query = kataKunci.trim()
+        if (query.isBlank()) nasabahList else nasabahList.filter {
+            it.nama.contains(query, ignoreCase = true) ||
+                it.nomorPolis.orEmpty().contains(query, ignoreCase = true) ||
+                it.produk.contains(query, ignoreCase = true)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -64,12 +75,29 @@ fun NasabahScreen(
                     Text("Tambah nasabah")
                 }
             }
-        } else LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(nasabahList, key = { it.id }) { nasabah ->
+        } else {
+            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+                OutlinedTextField(
+                    value = kataKunci,
+                    onValueChange = { kataKunci = it },
+                    placeholder = { Text("Cari nama, produk, atau no. polis...") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Cari nasabah") },
+                    trailingIcon = {
+                        if (kataKunci.isNotEmpty()) {
+                            IconButton(onClick = { kataKunci = "" }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Hapus pencarian")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+            items(hasilFilter, key = { it.id }) { nasabah ->
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -94,6 +122,7 @@ fun NasabahScreen(
                         }
                     },
                     )
+                }
                 }
             }
         }
