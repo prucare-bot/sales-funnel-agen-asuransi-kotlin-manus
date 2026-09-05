@@ -14,10 +14,13 @@ enum class AppThemeColor(val label: String) {
     MERAH("Merah"),
 }
 
-private val GreenPrimary = Color(0xFF00695C)
-private val GreenSecondary = Color(0xFF2A9D8F)
-private val GreenContainer = Color(0xFFD9EEEA)
-private val GreenBackground = Color(0xFFEAF6F3)
+// Redesain 2026: palet "navy / teal / marigold" — lihat mockup redesign-semua-layar.html
+private val GreenPrimary = Color(0xFF1C6E62)
+private val GreenSecondary = Color(0xFF12253A)
+private val GreenContainer = Color(0xFFE9F3F1)
+private val GreenBackground = Color(0xFFF7F3EA)
+private val GreenTertiary = Color(0xFFE4A335)
+private val GreenNavyDeep = Color(0xFF0B1A2B)
 
 private val BluePrimary = Color(0xFF1565C0)
 private val BlueSecondary = Color(0xFF42A5F5)
@@ -35,13 +38,13 @@ private val WarmWhite = Color(0xFFFFFEFC)
 private fun appColorScheme(theme: AppThemeColor) = when (theme) {
     AppThemeColor.HIJAU -> lightColorScheme(
         primary = GreenPrimary, onPrimary = Color.White,
-        primaryContainer = GreenContainer, onPrimaryContainer = Color(0xFF004D40),
+        primaryContainer = GreenContainer, onPrimaryContainer = GreenNavyDeep,
         secondary = GreenSecondary, onSecondary = Color.White,
-        secondaryContainer = GreenBackground, onSecondaryContainer = Color(0xFF004D40),
-        tertiary = Color(0xFFB4874A), onTertiary = Color.White,
-        background = GreenBackground, onBackground = Ink,
-        surface = WarmWhite, onSurface = Ink,
-        surfaceVariant = Color(0xFFE3F0EE), onSurfaceVariant = Color(0xFF52706A),
+        secondaryContainer = GreenBackground, onSecondaryContainer = GreenSecondary,
+        tertiary = GreenTertiary, onTertiary = GreenNavyDeep,
+        background = GreenBackground, onBackground = Color(0xFF1E2A28),
+        surface = WarmWhite, onSurface = Color(0xFF1E2A28),
+        surfaceVariant = Color(0xFFEDE8DA), onSurfaceVariant = Color(0xFF6B7671),
     )
     AppThemeColor.BIRU -> lightColorScheme(
         primary = BluePrimary, onPrimary = Color.White,
