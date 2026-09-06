@@ -19,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import id.jagakeluarga.salesfunnel.backup.LocalBackupScheduler
 import id.jagakeluarga.salesfunnel.notification.AgendaReminderWorker
+import id.jagakeluarga.salesfunnel.license.LicenseGateScreen
+import id.jagakeluarga.salesfunnel.license.LicenseManager
 import id.jagakeluarga.salesfunnel.security.AppLockGate
 import id.jagakeluarga.salesfunnel.security.AppLockManager
 import id.jagakeluarga.salesfunnel.ui.AppViewModel
@@ -56,6 +58,7 @@ class MainActivity : FragmentActivity() {
             }
             var selectedProspekId by remember { mutableStateOf<String?>(null) }
             var showGlobalSearch by remember { mutableStateOf(false) }
+            var licenseAllowed by remember { mutableStateOf(LicenseManager.isAccessAllowed(this@MainActivity)) }
             val settings = remember { getSharedPreferences("sales_funnel_settings", MODE_PRIVATE) }
             var namaAgen by remember {
                 mutableStateOf(settings.getString("nama_user", "Densus") ?: "Densus")
@@ -95,6 +98,9 @@ class MainActivity : FragmentActivity() {
             val prospekTerpilih = selectedProspekId?.let { id -> prospekList.find { it.id == id } }
 
             SalesFunnelTheme(theme = tema) {
+                if (!licenseAllowed) {
+                    LicenseGateScreen(onActivated = { licenseAllowed = true })
+                } else {
                 AppLockGate {
                     if (showGlobalSearch) {
                         GlobalSearchScreen(
@@ -216,6 +222,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             }
+                }
         }
     }
 }
