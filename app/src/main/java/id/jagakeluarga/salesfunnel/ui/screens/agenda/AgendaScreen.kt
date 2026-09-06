@@ -156,6 +156,63 @@ fun AgendaScreen(
 }
 
 @Composable
+private fun SnoozeButton(
+    onSnooze: (deltaMillis: Long) -> Unit,
+    onSnoozeKe: (targetMillis: Long) -> Unit,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    var showCustomPicker by remember { mutableStateOf(false) }
+    var customMillis by remember { mutableStateOf(System.currentTimeMillis() + 24 * 60 * 60 * 1000) }
+
+    Box {
+        IconButton(onClick = { showMenu = true }) {
+            Icon(Icons.Filled.Schedule, contentDescription = "Tunda pengingat")
+        }
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("Tunda 1 jam") },
+                onClick = { showMenu = false; onSnooze(60L * 60 * 1000) },
+            )
+            DropdownMenuItem(
+                text = { Text("Tunda 3 jam") },
+                onClick = { showMenu = false; onSnooze(3 * 60L * 60 * 1000) },
+            )
+            DropdownMenuItem(
+                text = { Text("Tunda 1 hari") },
+                onClick = { showMenu = false; onSnooze(24 * 60L * 60 * 1000) },
+            )
+            DropdownMenuItem(
+                text = { Text("Tunda 3 hari") },
+                onClick = { showMenu = false; onSnooze(3 * 24 * 60L * 60 * 1000) },
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("Pilih tanggal & waktu...") },
+                onClick = { showMenu = false; showCustomPicker = true },
+            )
+        }
+    }
+
+    if (showCustomPicker) {
+        AlertDialog(
+            onDismissRequest = { showCustomPicker = false },
+            title = { Text("Tunda ke tanggal & waktu") },
+            text = {
+                id.jagakeluarga.salesfunnel.ui.common.DateTimePickerField(
+                    selectedMillis = customMillis,
+                    onSelectedMillisChange = { customMillis = it },
+                    label = "Tunda hingga",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showCustomPicker = false; onSnoozeKe(customMillis) }) { Text("Simpan") }
+            },
+            dismissButton = { TextButton(onClick = { showCustomPicker = false }) { Text("Batal") } },
+        )
+    }
+}
+
+@Composable
 private fun AgendaGroupHeader(title: String) {
     Text(
         title,
@@ -216,9 +273,14 @@ private fun AgendaRow(
                             enabled = !prospekList.find { it.id == agenda.prospekId }?.nomorTelepon.isNullOrBlank(),
                             onClick = onKirimTemplate,
                         ) { Icon(Icons.Filled.Send, contentDescription = "Pilih template WhatsApp") }
-                        IconButton(
-                            onClick = { onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + 24 * 60 * 60 * 1000, selesai = false)) },
-                        ) { Icon(Icons.Filled.Schedule, contentDescription = "Tunda 1 hari") }
+                        SnoozeButton(
+                            onSnooze = { deltaMillis ->
+                                onSimpan(agenda.copy(waktuMulai = agenda.waktuMulai + deltaMillis, selesai = false))
+                            },
+                            onSnoozeKe = { targetMillis ->
+                                onSimpan(agenda.copy(waktuMulai = targetMillis, selesai = false))
+                            },
+                        )
                         IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = "Edit agenda") }
                         IconButton(onClick = { onHapus(agenda) }) { Icon(Icons.Filled.Delete, contentDescription = "Hapus") }
                     }
