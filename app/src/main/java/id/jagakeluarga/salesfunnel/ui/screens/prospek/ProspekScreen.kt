@@ -18,9 +18,14 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -367,22 +372,51 @@ fun ProspekDialog(
 
     if (!showContactPicker || initial != null) AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.PersonAdd, contentDescription = null, tint = Color.White)
+            }
+        },
         title = { Text(if (initial == null) "Tambah Prospek" else "Edit Prospek") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (initial == null) {
-                    OutlinedButton(onClick = ::openContactPicker, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = ::openContactPicker,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Icon(Icons.Filled.Contacts, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Pilih Kontak")
                     }
                 }
-                OutlinedTextField(nama, { nama = it }, label = { Text("Nama") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(telepon, { telepon = it }, label = { Text("No HP/WA") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    nama, { nama = it },
+                    label = { Text("Nama") },
+                    leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    telepon, { telepon = it },
+                    label = { Text("No HP/WA") },
+                    leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 OutlinedTextField(
                     value = kotaDomisili,
                     onValueChange = { kotaDomisili = it },
                     label = { Text("Kota domisili") },
+                    leadingIcon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -390,35 +424,26 @@ fun ProspekDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f).selectable(
-                            selected = sumberProspek == "Referensi",
-                            onClick = { sumberProspek = "Referensi" },
-                            role = Role.RadioButton,
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = sumberProspek == "Referensi", onClick = null)
-                        Text("Referensi")
-                    }
-                    Row(
-                        modifier = Modifier.weight(1f).selectable(
-                            selected = sumberProspek == "Organik",
-                            onClick = { sumberProspek = "Organik" },
-                            role = Role.RadioButton,
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = sumberProspek == "Organik", onClick = null)
-                        Text("Organik")
-                    }
+                    FilterChip(
+                        selected = sumberProspek == "Referensi",
+                        onClick = { sumberProspek = "Referensi" },
+                        label = { Text("Referensi") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    FilterChip(
+                        selected = sumberProspek == "Organik",
+                        onClick = { sumberProspek = "Organik" },
+                        label = { Text("Organik") },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 OutlinedTextField(
                     value = estimasiPremi,
                     onValueChange = { estimasiPremi = it.filter(Char::isDigit) },
                     label = { Text("Estimasi premi") },
+                    leadingIcon = { Icon(Icons.Filled.Payments, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -428,6 +453,8 @@ fun ProspekDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tahap") },
+                        leadingIcon = { Icon(Icons.Filled.Timeline, contentDescription = null) },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -440,7 +467,9 @@ fun ProspekDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            Button(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                onClick = {
                 if (nama.isNotBlank()) {
                     onSimpan(
                         (initial ?: Prospek(nama = nama)).copy(

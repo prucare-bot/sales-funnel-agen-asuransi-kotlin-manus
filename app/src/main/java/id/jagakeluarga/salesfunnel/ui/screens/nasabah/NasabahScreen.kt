@@ -11,6 +11,11 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -195,16 +200,54 @@ private fun NasabahDialog(
         ) { DatePicker(state = state) }
     }
 
+    val fieldShape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.People, contentDescription = null, tint = Color.White)
+            }
+        },
         title = { Text(if (initialNasabah == null) "Tambah Nasabah" else "Edit Nasabah") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(nama, { nama = it }, label = { Text("Nama") })
-                OutlinedTextField(produk, { produk = it }, label = { Text("Produk") })
-                OutlinedTextField(nomorPolis, { nomorPolis = it }, label = { Text("No. Polis") })
-                OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    nama, { nama = it },
+                    label = { Text("Nama") },
+                    leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                    shape = fieldShape,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    produk, { produk = it },
+                    label = { Text("Produk") },
+                    leadingIcon = { Icon(Icons.Filled.Inventory2, contentDescription = null) },
+                    shape = fieldShape,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    nomorPolis, { nomorPolis = it },
+                    label = { Text("No. Polis") },
+                    leadingIcon = { Icon(Icons.Filled.Badge, contentDescription = null) },
+                    shape = fieldShape,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(tanggalLahir?.let { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(it)) } ?: "Pilih tanggal lahir")
                 }
@@ -212,7 +255,9 @@ private fun NasabahDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            Button(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                onClick = {
                 if (nama.isNotBlank() && produk.isNotBlank()) {
                     onSimpan(
                         initialNasabah?.copy(
