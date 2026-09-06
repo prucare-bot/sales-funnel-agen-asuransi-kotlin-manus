@@ -106,7 +106,9 @@ fun PipelineScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(items, key = { it.id }) { prospek ->
-                                ProspekCard(prospek, onClick = { onBukaProspek(prospek) })
+                                Box(Modifier.animateItem()) {
+                                    ProspekCard(prospek, onClick = { onBukaProspek(prospek) })
+                                }
                             }
                         }
                     }
@@ -140,7 +142,11 @@ private fun PipelineColumn(
         }
         Spacer(Modifier.height(8.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(items, key = { it.id }) { prospek -> ProspekCard(prospek, onClick = { onBukaProspek(prospek) }) }
+            items(items, key = { it.id }) { prospek ->
+                Box(Modifier.animateItem()) {
+                    ProspekCard(prospek, onClick = { onBukaProspek(prospek) })
+                }
+            }
         }
     }
 }

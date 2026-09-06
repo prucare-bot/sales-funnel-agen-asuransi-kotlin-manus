@@ -266,8 +266,13 @@ private fun HeroTargetCard(
     targetPremi: Long,
 ) {
     val colors = MaterialTheme.colorScheme
-    val closingProgress = if (targetClosing > 0) (closingAktual.toFloat() / targetClosing).coerceIn(0f, 1f) else 0f
-    val persenTercapai = (closingProgress * 100).toInt()
+    val closingProgressTarget = if (targetClosing > 0) (closingAktual.toFloat() / targetClosing).coerceIn(0f, 1f) else 0f
+    val closingProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = closingProgressTarget,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 900, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "targetRingProgress",
+    )
+    val persenTercapai = (closingProgressTarget * 100).toInt()
 
     Column(
         modifier = Modifier
@@ -473,7 +478,12 @@ private fun FollowUpPrioritySection(
 
 @Composable
 private fun FunnelBar(label: String, jumlah: Int, persentase: Int, maxJumlah: Int, warna: Color) {
-    val fraksi = (jumlah.toFloat() / maxJumlah.toFloat()).coerceIn(0.04f, 1f)
+    val fraksiTarget = (jumlah.toFloat() / maxJumlah.toFloat()).coerceIn(0.04f, 1f)
+    val fraksi by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = fraksiTarget,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 700, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "funnelBarFraksi",
+    )
     Column {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(label, style = MaterialTheme.typography.bodyMedium)
