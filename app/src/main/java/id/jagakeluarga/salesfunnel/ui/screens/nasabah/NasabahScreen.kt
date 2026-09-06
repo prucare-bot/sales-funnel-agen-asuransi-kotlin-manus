@@ -102,7 +102,7 @@ fun NasabahScreen(
                 ) {
             items(hasilFilter, key = { it.id }) { nasabah ->
                 ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().animateItem(),
                     shape = MaterialTheme.shapes.medium,
                 ) {
                     val inisial = nasabah.nama.trim().split(" ")

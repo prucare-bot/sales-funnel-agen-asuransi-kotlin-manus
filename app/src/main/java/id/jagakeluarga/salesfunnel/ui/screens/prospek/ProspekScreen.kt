@@ -161,12 +161,14 @@ fun ProspekScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(hasilFilter, key = { it.id }) { prospek ->
-                        SwipeableProspekItem(
-                            prospek = prospek,
-                            onKlik = { onBukaDetail(prospek) },
-                            onHapus = { onHapus(prospek) },
-                        )
-                        HorizontalDivider()
+                        Column(Modifier.animateItem()) {
+                            SwipeableProspekItem(
+                                prospek = prospek,
+                                onKlik = { onBukaDetail(prospek) },
+                                onHapus = { onHapus(prospek) },
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }

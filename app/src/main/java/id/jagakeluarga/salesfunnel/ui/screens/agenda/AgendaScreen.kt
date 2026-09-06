@@ -97,19 +97,25 @@ fun AgendaScreen(
                 if (terlambat.isNotEmpty()) {
                     item { AgendaGroupHeader("Terlambat") }
                     items(terlambat, key = { it.id }) { agenda ->
-                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        Box(Modifier.animateItem()) {
+                            AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        }
                     }
                 }
                 if (hariIni.isNotEmpty()) {
                     item { AgendaGroupHeader("Hari ini") }
                     items(hariIni, key = { it.id }) { agenda ->
-                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        Box(Modifier.animateItem()) {
+                            AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        }
                     }
                 }
                 if (berikutnya.isNotEmpty()) {
                     item { AgendaGroupHeader("Berikutnya") }
                     items(berikutnya, key = { it.id }) { agenda ->
-                        AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        Box(Modifier.animateItem()) {
+                            AgendaRow(agenda, prospekList, fmt, onToggleSelesai, onSimpan, { dialogAgenda = agenda; showDialog = true }, onHapus, { templateAgenda = agenda })
+                        }
                     }
                 }
             }
