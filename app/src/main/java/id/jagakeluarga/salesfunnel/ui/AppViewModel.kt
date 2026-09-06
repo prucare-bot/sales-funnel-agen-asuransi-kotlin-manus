@@ -40,6 +40,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val nasabahList = databaseGeneration.flatMapLatest { repository.nasabahList }.catch { emit(emptyList()) }.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
+    val statusHistoryAll = databaseGeneration.flatMapLatest { repository.statusHistoryAll }.catch { emit(emptyList()) }.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
 
     /** Rebinds all observable flows to the database file just restored on disk. */
     fun reloadAfterRestore() {

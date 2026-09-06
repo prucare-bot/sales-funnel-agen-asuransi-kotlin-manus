@@ -39,6 +39,7 @@ fun BerandaScreen(
     prospekList: List<Prospek>,
     agendaList: List<Agenda>,
     nasabahList: List<Nasabah> = emptyList(),
+    statusHistoryAll: List<id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory> = emptyList(),
     namaAgen: String = "Densus",
     targetClosing: Int = 10,
     targetPremi: Long = 0L,
@@ -193,6 +194,8 @@ fun BerandaScreen(
                     Spacer(Modifier.height(8.dp))
                 }
             }
+
+            PipelineSpeedCard(statusHistoryAll)
 
             Column {
                 Text("Agenda Hari Ini", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -497,6 +500,80 @@ private fun FunnelBar(label: String, jumlah: Int, persentase: Int, maxJumlah: In
             Box(
                 Modifier.fillMaxWidth(fraksi).height(10.dp).clip(RoundedCornerShape(6.dp)).background(warna)
             )
+        }
+    }
+}
+
+/**
+ * Dashboard analitik lanjutan: rata-rata lama prospek "mandek" di tiap tahap,
+ * dan berapa persen prospek yang pernah sampai ke tahap tersebut (conversion
+ * kumulatif, bukan cuma jumlah yang sedang aktif di tahap itu sekarang).
+ * Dihitung dari ProspekStatusHistory - data ini sudah lama tersimpan di
+ * database tapi sebelumnya tidak pernah ditampilkan di mana pun.
+ */
+@Composable
+private fun PipelineSpeedCard(statusHistoryAll: List<id.jagakeluarga.salesfunnel.data.entity.ProspekStatusHistory>) {
+    if (statusHistoryAll.isEmpty()) return
+
+    val perProspek = statusHistoryAll.groupBy { it.prospekId }
+
+    // Rata-rata hari dari satu perubahan tahap ke perubahan berikutnya (interval tertutup saja;
+    // tahap yang sedang berjalan sekarang tidak dihitung karena durasinya belum final).
+    val totalHariPerTahap = mutableMapOf<TahapPipeline, Double>()
+    val jumlahIntervalPerTahap = mutableMapOf<TahapPipeline, Int>()
+    perProspek.values.forEach { riwayat ->
+        val urut = riwayat.sortedBy { it.diubahPada }
+        for (i in 0 until urut.size - 1) {
+            val hari = (urut[i + 1].diubahPada - urut[i].diubahPada) / (1000.0 * 60 * 60 * 24)
+            val tahap = urut[i].tahap
+            totalHariPerTahap[tahap] = (totalHariPerTahap[tahap] ?: 0.0) + hari
+            jumlahIntervalPerTahap[tahap] = (jumlahIntervalPerTahap[tahap] ?: 0) + 1
+        }
+    }
+
+    // Conversion kumulatif: dari total prospek yang pernah tercatat, berapa % yang
+    // ordinal tahap tertingginya pernah menyentuh tahap ini atau lebih jauh.
+    val ordinalTertinggiPerProspek = perProspek.mapValues { (_, riwayat) -> riwayat.maxOf { it.tahap.ordinal } }
+    val totalProspekTercatat = ordinalTertinggiPerProspek.size
+    if (totalProspekTercatat == 0) return
+
+    Column {
+        Text("Kecepatan & Konversi Pipeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Berdasarkan riwayat perpindahan tahap seluruh prospek",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        TahapPipeline.entries.forEach { tahap ->
+            val jumlahInterval = jumlahIntervalPerTahap[tahap] ?: 0
+            val rataRataHari = if (jumlahInterval > 0) totalHariPerTahap[tahap]!! / jumlahInterval else null
+            val konversi = ordinalTertinggiPerProspek.values.count { it >= tahap.ordinal } * 100 / totalProspekTercatat
+            val warna = warnaTahap(tahap)
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(8.dp).clip(RoundedCornerShape(50)).background(warna))
+                Spacer(Modifier.width(8.dp))
+                Text(tahap.label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(
+                    if (rataRataHari != null) "~${rataRataHari.let { if (it < 1) "<1" else it.toInt().toString() }} hari" else "-",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(warna.copy(alpha = 0.15f))
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                ) {
+                    Text("$konversi%", style = MaterialTheme.typography.labelSmall, color = warna, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

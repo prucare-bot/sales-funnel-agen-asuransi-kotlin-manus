@@ -30,6 +30,7 @@ import id.jagakeluarga.salesfunnel.ui.screens.nasabah.NasabahScreen
 import id.jagakeluarga.salesfunnel.ui.screens.pipeline.PipelineScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.DetailProspekScreen
 import id.jagakeluarga.salesfunnel.ui.screens.prospek.ProspekScreen
+import id.jagakeluarga.salesfunnel.ui.screens.search.GlobalSearchScreen
 import id.jagakeluarga.salesfunnel.ui.screens.settings.SettingsScreen
 import id.jagakeluarga.salesfunnel.ui.theme.AppThemeColor
 import id.jagakeluarga.salesfunnel.ui.theme.SalesFunnelTheme
@@ -54,6 +55,7 @@ class MainActivity : FragmentActivity() {
                 )
             }
             var selectedProspekId by remember { mutableStateOf<String?>(null) }
+            var showGlobalSearch by remember { mutableStateOf(false) }
             val settings = remember { getSharedPreferences("sales_funnel_settings", MODE_PRIVATE) }
             var namaAgen by remember {
                 mutableStateOf(settings.getString("nama_user", "Densus") ?: "Densus")
@@ -80,6 +82,7 @@ class MainActivity : FragmentActivity() {
             val prospekList by viewModel.prospekList.collectAsState()
             val agendaList by viewModel.agendaList.collectAsState()
             val nasabahList by viewModel.nasabahList.collectAsState()
+            val statusHistoryAll by viewModel.statusHistoryAll.collectAsState()
             val errorMessage by viewModel.errorMessage.collectAsState()
 
             LaunchedEffect(errorMessage) {
@@ -93,7 +96,26 @@ class MainActivity : FragmentActivity() {
 
             SalesFunnelTheme(theme = tema) {
                 AppLockGate {
-                    if (prospekTerpilih != null) {
+                    if (showGlobalSearch) {
+                        GlobalSearchScreen(
+                            prospekList = prospekList,
+                            nasabahList = nasabahList,
+                            agendaList = agendaList,
+                            onTutup = { showGlobalSearch = false },
+                            onBukaProspek = { prospek ->
+                                showGlobalSearch = false
+                                selectedProspekId = prospek.id
+                            },
+                            onBukaNasabah = {
+                                showGlobalSearch = false
+                                current = Destination.NASABAH
+                            },
+                            onBukaAgenda = {
+                                showGlobalSearch = false
+                                current = Destination.AGENDA
+                            },
+                        )
+                    } else if (prospekTerpilih != null) {
                     val riwayatStatus by viewModel.statusHistoryForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
                     val riwayatAktivitas by viewModel.aktivitasForProspek(prospekTerpilih.id).collectAsState(initial = emptyList())
                     DetailProspekScreen(
@@ -124,13 +146,14 @@ class MainActivity : FragmentActivity() {
                         windowSizeClass = windowSizeClass,
                         current = current,
                         onNavigate = { current = it },
-                        onQuickSearch = { current = Destination.PROSPEK },
+                        onQuickSearch = { showGlobalSearch = true },
                     ) { destination ->
                         when (destination) {
                             Destination.BERANDA -> BerandaScreen(
                                 prospekList = prospekList,
                                 agendaList = agendaList,
                                 nasabahList = nasabahList,
+                                statusHistoryAll = statusHistoryAll,
                                 namaAgen = namaAgen,
                                 targetClosing = targetClosing,
                                 targetPremi = targetPremi,

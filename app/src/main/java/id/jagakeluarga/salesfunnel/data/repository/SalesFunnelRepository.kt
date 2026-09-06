@@ -14,6 +14,8 @@ class SalesFunnelRepository(private val db: AppDatabase) {
     val prospekList: Flow<List<Prospek>> = db.prospekDao().observeAll()
     val agendaList: Flow<List<Agenda>> = db.agendaDao().observeAll()
     val nasabahList: Flow<List<Nasabah>> = db.nasabahDao().observeAll()
+    /** Seluruh riwayat perpindahan tahap lintas prospek, untuk dashboard analitik. */
+    val statusHistoryAll: Flow<List<ProspekStatusHistory>> = db.prospekStatusHistoryDao().observeAll()
 
     suspend fun getProspek(id: String) = db.prospekDao().getById(id)
 
