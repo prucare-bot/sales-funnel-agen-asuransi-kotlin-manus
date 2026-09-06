@@ -12,6 +12,10 @@ interface ProspekStatusHistoryDao {
     @Query("SELECT * FROM prospek_status_history WHERE prospekId = :prospekId ORDER BY diubahPada DESC")
     fun observeByProspek(prospekId: String): Flow<List<ProspekStatusHistory>>
 
+    /** Seluruh riwayat perpindahan tahap lintas prospek, dipakai untuk dashboard analitik. */
+    @Query("SELECT * FROM prospek_status_history ORDER BY prospekId ASC, diubahPada ASC")
+    fun observeAll(): Flow<List<ProspekStatusHistory>>
+
     @Query("SELECT * FROM prospek_status_history WHERE prospekId = :prospekId ORDER BY diubahPada ASC LIMIT 1")
     suspend fun getFirstByProspek(prospekId: String): ProspekStatusHistory?
 
