@@ -453,7 +453,6 @@ fun ProspekDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tahap") },
-                        leadingIcon = { Icon(Icons.Filled.Timeline, contentDescription = null) },
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                     )

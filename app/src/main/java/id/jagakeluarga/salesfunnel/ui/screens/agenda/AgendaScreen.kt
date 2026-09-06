@@ -422,7 +422,6 @@ private fun AgendaDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Jenis") },
-                        leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) },
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                     )
