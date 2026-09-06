@@ -185,7 +185,7 @@ private fun GlobalHeader(
     onNavigate: (Destination) -> Unit,
     onQuickSearch: () -> Unit,
 ) {
-    val dateText = remember { SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID")).format(Date()) }
+    val dateText = remember { SimpleDateFormat("EEE, dd MMM yyyy", Locale("id", "ID")).format(Date()) }
     val colors = MaterialTheme.colorScheme
     TopAppBar(
         modifier = Modifier

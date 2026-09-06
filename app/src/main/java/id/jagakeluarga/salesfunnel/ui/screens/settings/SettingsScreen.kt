@@ -159,12 +159,11 @@ fun SettingsScreen(
         }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Pengaturan & Backup") }) }) { padding ->
-        Column(
-            modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text("User Settings", style = MaterialTheme.typography.headlineSmall)
+    Column(
+        modifier = Modifier.padding(16.dp).fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+            Text("User Settings", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             androidx.compose.material3.Surface(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
                 color = MaterialTheme.colorScheme.surface,
@@ -393,7 +392,6 @@ fun SettingsScreen(
             if (isBusy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
 
             status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-        }
     }
 
     importPreview?.let { preview ->
