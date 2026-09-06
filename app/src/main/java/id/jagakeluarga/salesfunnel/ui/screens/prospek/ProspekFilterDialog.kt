@@ -37,7 +37,10 @@ fun ProspekFilterDialog(
     }.timeInMillis
 
     if (showMulai) {
-        val state = rememberDatePickerState(initialSelectedDateMillis = mulai ?: System.currentTimeMillis())
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = mulai ?: System.currentTimeMillis(),
+            initialDisplayMode = DisplayMode.Input,
+        )
         DatePickerDialog(
             onDismissRequest = { showMulai = false },
             confirmButton = {
@@ -47,7 +50,10 @@ fun ProspekFilterDialog(
         ) { DatePicker(state = state) }
     }
     if (showAkhir) {
-        val state = rememberDatePickerState(initialSelectedDateMillis = akhir ?: System.currentTimeMillis())
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = akhir ?: System.currentTimeMillis(),
+            initialDisplayMode = DisplayMode.Input,
+        )
         DatePickerDialog(
             onDismissRequest = { showAkhir = false },
             confirmButton = {

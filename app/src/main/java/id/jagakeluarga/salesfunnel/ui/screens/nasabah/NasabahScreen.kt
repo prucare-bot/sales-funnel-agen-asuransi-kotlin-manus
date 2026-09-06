@@ -191,7 +191,10 @@ private fun NasabahDialog(
     var validationError by remember { mutableStateOf<String?>(null) }
 
     if (showDatePicker) {
-        val state = rememberDatePickerState(initialSelectedDateMillis = tanggalLahir ?: System.currentTimeMillis())
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = tanggalLahir ?: System.currentTimeMillis(),
+            initialDisplayMode = DisplayMode.Input,
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
