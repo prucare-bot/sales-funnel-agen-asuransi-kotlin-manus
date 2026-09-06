@@ -27,7 +27,10 @@ fun DateTimePickerField(
     val calendar = remember(selectedMillis) {
         Calendar.getInstance().apply { timeInMillis = selectedMillis }
     }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedMillis)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedMillis,
+        initialDisplayMode = DisplayMode.Input,
+    )
 
     OutlinedTextField(
         value = dateFormatter.format(Date(selectedMillis)),
