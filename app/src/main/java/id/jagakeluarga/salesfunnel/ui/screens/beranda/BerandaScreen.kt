@@ -2,7 +2,6 @@ package id.jagakeluarga.salesfunnel.ui.screens.beranda
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -333,31 +332,37 @@ private fun HeroTargetCard(
 @Composable
 private fun StatStrip(items: List<Pair<String, String>>) {
     val colors = MaterialTheme.colorScheme
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(colors.surface)
-            .horizontalScroll(rememberScrollState()),
+            .background(colors.surface),
     ) {
-        items.forEachIndexed { index, (angka, label) ->
-            Column(
-                modifier = Modifier
-                    .widthIn(min = 92.dp)
-                    .padding(vertical = 14.dp, horizontal = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(angka, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colors.primary)
-                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, textAlign = TextAlign.Center)
+        items.chunked(3).forEachIndexed { rowIndex, rowItems ->
+            if (rowIndex > 0) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceVariant))
             }
-            if (index < items.size - 1) {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 14.dp)
-                        .width(1.dp)
-                        .fillMaxHeight()
-                        .background(colors.surfaceVariant),
-                )
+            Row(Modifier.fillMaxWidth()) {
+                rowItems.forEachIndexed { colIndex, (angka, label) ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 14.dp, horizontal = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(angka, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = colors.primary)
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                        )
+                    }
+                    if (colIndex < rowItems.size - 1) {
+                        Box(Modifier.width(1.dp).height(40.dp).background(colors.surfaceVariant))
+                    }
+                }
             }
         }
     }

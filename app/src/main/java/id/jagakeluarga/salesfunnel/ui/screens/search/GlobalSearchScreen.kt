@@ -91,7 +91,7 @@ fun GlobalSearchScreen(
                     OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
-                        placeholder = { Text("Cari prospek, nasabah, atau agenda...") },
+                        placeholder = { Text("Cari...") },
                         singleLine = true,
                         shape = RoundedCornerShape(50),
                         trailingIcon = {
