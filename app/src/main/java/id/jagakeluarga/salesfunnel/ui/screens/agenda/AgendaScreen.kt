@@ -7,8 +7,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Schedule
@@ -332,13 +336,26 @@ private fun AgendaDialog(
 
     if (!showProspekPicker) AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Event, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiary)
+            }
+        },
         title = { Text(if (agendaAwal == null) "Tambah Agenda" else "Edit Agenda") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = judul,
                     onValueChange = { judul = it },
                     label = { Text("Judul") },
+                    leadingIcon = { Icon(Icons.Filled.EditNote, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -349,6 +366,7 @@ private fun AgendaDialog(
                         readOnly = true,
                         label = { Text("Prospek") },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Box(
@@ -365,6 +383,8 @@ private fun AgendaDialog(
                     value = catatan,
                     onValueChange = { catatan = it },
                     label = { Text("Keterangan follow-up (masuk Timeline Aktivitas)") },
+                    leadingIcon = { Icon(Icons.Filled.Notes, contentDescription = null) },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                 )
@@ -402,6 +422,8 @@ private fun AgendaDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Jenis") },
+                        leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) },
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                     )
                     ExposedDropdownMenu(
@@ -420,7 +442,9 @@ private fun AgendaDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            Button(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                onClick = {
                 if (judul.isNotBlank()) {
                     val agenda = agendaAwal?.copy(
                         prospekId = prospek.id,
@@ -444,7 +468,7 @@ private fun AgendaDialog(
                 }
             }) { Text("Simpan") }
         },
-                dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
     )
 }
 
