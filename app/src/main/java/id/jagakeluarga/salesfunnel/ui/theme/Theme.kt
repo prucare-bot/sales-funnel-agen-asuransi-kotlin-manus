@@ -66,6 +66,17 @@ private fun appColorScheme(theme: AppThemeColor) = when (theme) {
         background = BlueBackground, onBackground = Color(0xFF26384A),
         surface = WarmWhite, onSurface = Color(0xFF26384A),
         surfaceVariant = Color(0xFFE6F0FA), onSurfaceVariant = Color(0xFF526B83),
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFEDF4FC),
+        surfaceContainer = Color(0xFFE3EEFA),
+        surfaceContainerHigh = Color(0xFFD9E8F7),
+        surfaceContainerHighest = Color(0xFFCDE1F4),
+        outline = Color(0xFFA3B7C9),
+        outlineVariant = Color(0xFFDCE7F2),
+        inverseSurface = Color(0xFF16324D),
+        inverseOnSurface = BlueBackground,
+        inversePrimary = Color(0xFFA9CDF2),
+        scrim = Color(0xFF000000),
     )
     AppThemeColor.MERAH -> lightColorScheme(
         primary = RedPrimary, onPrimary = Color.White,
@@ -76,6 +87,17 @@ private fun appColorScheme(theme: AppThemeColor) = when (theme) {
         background = RedBackground, onBackground = Color(0xFF4A2925),
         surface = WarmWhite, onSurface = Color(0xFF4A2925),
         surfaceVariant = Color(0xFFF8E9E5), onSurfaceVariant = Color(0xFF765954),
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFFCEEEA),
+        surfaceContainer = Color(0xFFFAE4DE),
+        surfaceContainerHigh = Color(0xFFF6D9D1),
+        surfaceContainerHighest = Color(0xFFF2CDC3),
+        outline = Color(0xFFCBA69E),
+        outlineVariant = Color(0xFFF0DBD4),
+        inverseSurface = Color(0xFF4A2925),
+        inverseOnSurface = RedBackground,
+        inversePrimary = Color(0xFFF2B4AC),
+        scrim = Color(0xFF000000),
     )
 }
 
