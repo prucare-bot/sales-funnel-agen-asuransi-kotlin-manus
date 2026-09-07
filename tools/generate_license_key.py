@@ -17,7 +17,7 @@ import hmac
 import sys
 
 # Harus identik dengan SECRET di LicenseManager.kt
-SECRET = "GANTI-DENGAN-KATA-RAHASIA-ANDA-SENDIRI-2026"
+SECRET = "Sukses@2026"
 
 
 def generate_key(device_id: str) -> str:
