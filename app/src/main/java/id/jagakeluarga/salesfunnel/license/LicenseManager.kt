@@ -42,7 +42,7 @@ object LicenseManager {
     // GANTI dengan string rahasia buatan Anda sendiri sebelum membagikan app ke
     // pelanggan (bebas, mis. kombinasi acak panjang). Nilai yang SAMA PERSIS
     // harus dipakai di tools/generate_license_key.py.
-    private const val SECRET = "GANTI-DENGAN-KATA-RAHASIA-ANDA-SENDIRI-2026"
+    private const val SECRET = "Sukses@2026"
 
     fun getDeviceId(context: Context): String =
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "UNKNOWN-DEVICE"
